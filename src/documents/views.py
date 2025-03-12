@@ -26,7 +26,10 @@ class DocumentViewSet(viewsets.ModelViewSet):
         queryset = Document.objects.all()
 
         order_by = self.request.query_params.get('ordering', '-created_at')
-        if order_by in ['created_at', '-created_at', 'updated_at', '-updated_at']:
+        valid_orders = [
+            'created_at', '-created_at', 'updated_at', '-updated_at'
+        ]
+        if order_by in valid_orders:
             queryset = queryset.order_by(order_by)
         else:
             queryset = queryset.order_by('-created_at')
