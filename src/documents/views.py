@@ -3,7 +3,7 @@ Views for the documents API
 """
 
 from rest_framework import viewsets
-
+from rest_framework.filters import OrderingFilter
 from core.models import Document
 from documents import serializers
 
@@ -14,17 +14,22 @@ class DocumentViewSet(viewsets.ModelViewSet):
     """
     serializer_class = serializers.DocumentSerializer
     queryset = Document.objects.all()
+    filter_backends = [OrderingFilter]
+    ordering_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
 
     def get_queryset(self):
         """
         Return documents ordered by created_at (newest first).
         Allows ordering by updated_at if specified.
         """
-        queryset = Document.objects.all().order_by('-created_at')
+        queryset = Document.objects.all()
 
-        order_by = self.request.query_params.get('order_by')
-        if order_by == 'updated_at':
-            queryset = queryset.order_by('-updated_at', '-created_at')
+        order_by = self.request.query_params.get('ordering', '-created_at')
+        if order_by in ['created_at', '-created_at', 'updated_at', '-updated_at']:
+            queryset = queryset.order_by(order_by)
+        else:
+            queryset = queryset.order_by('-created_at')
 
         return queryset
 
