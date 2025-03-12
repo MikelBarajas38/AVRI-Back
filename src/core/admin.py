@@ -24,10 +24,21 @@ class UserAdmin(BaseUserAdmin):
                     'is_active',
                     'is_staff',
                     'is_superuser',
+                    'is_author'
                 )
             }
         ),
         (_('Important dates'), {'fields': ('last_login',)}),
+        (_('Personal info'), {'fields': ('name', 'first_name', 'last_name')}),
+        (
+            _('Education info'),
+            {
+                'fields': (
+                    'education_level',
+                    'field_of_study',
+                )
+            }
+        ),
     )
     readonly_fields = ['last_login']
     add_fieldsets = (
@@ -47,3 +58,4 @@ class UserAdmin(BaseUserAdmin):
 
 
 admin.site.register(models.User, UserAdmin)
+admin.site.register(models.FieldOfStudy)
