@@ -50,15 +50,21 @@ class PublicDocumentsApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-    def test_retrieve_documents(self):
+    def test_get_documents(self):
         """
         Test retrieving a list of documents.
         """
         return
 
-    def test_retrieve_documents_is_ordered_by_date(self):
+    def test_get_documents_ordered_by_created_at(self):
         """
-        Test that documents are ordered by date.
+        Test that documents are ordered by created_at (newest first).
+        """
+        return
+
+    def test_get_documents_ordered_by_updated_at(self):
+        """
+        Test that documents are ordered by updated_at.
         """
         return
 
