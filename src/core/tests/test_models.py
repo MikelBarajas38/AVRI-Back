@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 import core.models as cm
 from datetime import datetime, timedelta
 
+
 class ModelTests(TestCase):
     """
     Test models
@@ -127,10 +128,7 @@ class ModelTests(TestCase):
         for k, v in payload.items():
             self.assertEqual(getattr(document, k), v)
 
-
-
-    def setUp(self):
-                
+    def setUp(self):    
         """
         Create sample documents for testing ordering.
         """
