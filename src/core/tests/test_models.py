@@ -4,9 +4,8 @@ Tests for models.
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-
 import core.models as cm
-
+from datetime import datetime, timedelta
 
 class ModelTests(TestCase):
     """
@@ -128,13 +127,48 @@ class ModelTests(TestCase):
         for k, v in payload.items():
             self.assertEqual(getattr(document, k), v)
 
-    
+
+
+    def setUp(self):
+                
+        """
+        Create sample documents for testing ordering.
+        """
+        now = datetime.now()
+        self.doc1 = cm.Document.objects.create(
+            title="Doc 1",
+            repository_uri="https://example.com",
+            created_at=now,
+            updated_at=now - timedelta(days=1)
+        )
+        self.doc2 = cm.Document.objects.create(
+            title="Doc 2",
+            repository_uri="https://example.com",
+            created_at=now - timedelta(days=1),
+            updated_at=now
+        )
+        self.doc3 = cm.Document.objects.create(
+            title="Doc 3",
+            repository_uri="https://example.com",
+            created_at=now - timedelta(days=2),
+            updated_at=now - timedelta(days=2)
+        )
+
     def test_order_documents_by_created_at(self):
         """
-        Test that documents are correctly ordered by created_at.
+        Test that documents are correctly ordered by created_at (newest first).
         """
-        
         documents = list(cm.Document.objects.order_by('-created_at'))
 
         for i in range(len(documents) - 1):
             self.assertGreaterEqual(documents[i].created_at, documents[i + 1].created_at)
+
+
+    def test_order_documents_by_updated_at(self):
+        """
+        Test that documents are correctly ordered by updated_at (newest first).
+        """
+        documents = list(cm.Document.objects.order_by('-updated_at', '-created_at'))
+
+        for i in range(len(documents) - 1):
+            self.assertGreaterEqual(documents[i].updated_at, documents[i + 1].updated_at)

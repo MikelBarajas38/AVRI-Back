@@ -17,19 +17,16 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Return documents by date.
         Return documents ordered by created_at (newest first).
         Allows ordering by updated_at if specified.
         """
-        # TODO: order by created_at, updated_at
-
         queryset = Document.objects.all().order_by('-created_at')
 
         order_by = self.request.query_params.get('order_by')
-        if order_by == 'update_at':
-            queryset = queryset.order_by('-update_at')
+        if order_by == 'updated_at':
+            queryset = queryset.order_by('-updated_at', '-created_at')
 
-        return self.queryset
+        return queryset
 
     def get_serializer_class(self):
         """
