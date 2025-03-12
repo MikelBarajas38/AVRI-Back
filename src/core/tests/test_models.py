@@ -127,3 +127,14 @@ class ModelTests(TestCase):
 
         for k, v in payload.items():
             self.assertEqual(getattr(document, k), v)
+
+    
+    def test_order_documents_by_created_at(self):
+        """
+        Test that documents are correctly ordered by created_at.
+        """
+        
+        documents = list(cm.Document.objects.order_by('-created_at'))
+
+        for i in range(len(documents) - 1):
+            self.assertGreaterEqual(documents[i].created_at, documents[i + 1].created_at)
