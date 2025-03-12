@@ -159,16 +159,23 @@ class ModelTests(TestCase):
         documents = list(cm.Document.objects.order_by('-created_at'))
 
         for i in range(len(documents) - 1):
-            self.assertGreaterEqual(documents[i].created_at, 
-                                    documents[i + 1].created_at)
+            self.assertGreaterEqual(
+                documents[i].created_at,
+                documents[i + 1].created_at
+            )
 
     def test_order_documents_by_updated_at(self):
         """
         Test that documents are correctly ordered by updated_at (newest first).
         """
-        documents = list(cm.Document.objects.order_by
-                         ('-updated_at', '-created_at'))
+        documents = list(
+            cm.Document.objects.order_by(
+                '-updated_at', '-created_at'
+                )
+        )
 
         for i in range(len(documents) - 1):
-            self.assertGreaterEqual(documents[i].updated_at, 
-                                    documents[i + 1].updated_at)
+            self.assertGreaterEqual(
+                documents[i].updated_at,
+                documents[i + 1].updated_at
+            )
