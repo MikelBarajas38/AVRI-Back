@@ -5,6 +5,8 @@ Tests for models.
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 
+import core.models as cm
+
 
 class ModelTests(TestCase):
     """
@@ -15,7 +17,6 @@ class ModelTests(TestCase):
         """
         Test creating a new user with an email is successful
         """
-
         email = 'test@example.com'
         password = 'testpass1234'
 
@@ -28,7 +29,6 @@ class ModelTests(TestCase):
         """
         Test email for a new user is normalized
         """
-
         sample_emails = [
             ['test1@EXAMPLE.com', 'test1@example.com'],
             ['Test2@Example.com', 'Test2@example.com'],
@@ -46,7 +46,6 @@ class ModelTests(TestCase):
         """
         Test creating user without email raises error
         """
-
         email = None
         password = 'testpass1234'
 
@@ -57,7 +56,6 @@ class ModelTests(TestCase):
         """
         Test creating a new superuser
         """
-
         email = 'test@example.com'
         password = 'testpass1234'
 
@@ -65,3 +63,38 @@ class ModelTests(TestCase):
 
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+    def test_create_field_of_study(self):
+        """
+        Test creating a new field of study
+        """
+        name = 'Test Field'
+
+        field = cm.FieldOfStudy.objects.create(name=name)
+
+        self.assertEqual(field.name, name)
+
+    def test_create_user_full_data(self):
+        """
+        Test creating a new user with full data
+        """
+        field = cm.FieldOfStudy.objects.create(name='Test Field')
+
+        payload = {
+            'email': 'test@example.com',
+            'password': 'testpass1234',
+            'name': 'Test Name',
+            'first_name': 'Parental',
+            'last_name': 'Maternal',
+            'education_level': 'Licenciatura',
+            'field_of_study': field
+        }
+
+        user = get_user_model().objects.create_user(**payload)
+
+        for k, v in payload.items():
+            if k == 'password':
+                continue
+            self.assertEqual(getattr(user, k), v)
+
+        self.assertTrue(user.check_password(payload['password']))
