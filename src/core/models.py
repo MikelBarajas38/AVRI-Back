@@ -85,3 +85,28 @@ class FieldOfStudy(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Document(models.Model):
+    """
+    Document model.
+    """
+    title = models.CharField(max_length=255)
+    repository_uri = models.URLField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    DOCUMENT_STATUS = {
+        'L': 'Acceso libre',
+        'R': 'Restringido',
+        'E': 'Embargado',
+    }
+
+    status = models.CharField(
+        max_length=255,
+        choices=DOCUMENT_STATUS,
+        default='L'
+    )
+
+    def __str__(self):
+        return self.title

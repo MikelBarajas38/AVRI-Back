@@ -57,5 +57,36 @@ class UserAdmin(BaseUserAdmin):
     )
 
 
+class DocumentAdmin(admin.ModelAdmin):
+    """
+    Define the admin pages for documents.
+    """
+    ordering = ['id']
+    list_display = ['title', 'created_at']
+    fieldsets = (
+        (None, {'fields': ('title',)}),
+        (
+            _('Important dates'),
+            {
+                'fields': (
+                    'created_at',
+                    'updated_at',
+                )
+            }
+        ),
+        (
+            _('Document info'),
+            {
+                'fields': (
+                    'repository_uri',
+                    'status',
+                )
+            }
+        ),
+    )
+    readonly_fields = ['created_at', 'updated_at']
+
+
 admin.site.register(models.User, UserAdmin)
 admin.site.register(models.FieldOfStudy)
+admin.site.register(models.Document, DocumentAdmin)

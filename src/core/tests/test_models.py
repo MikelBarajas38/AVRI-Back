@@ -86,7 +86,7 @@ class ModelTests(TestCase):
             'name': 'Test Name',
             'first_name': 'Parental',
             'last_name': 'Maternal',
-            'education_level': 'Licenciatura',
+            'education_level': 'L',
             'field_of_study': field
         }
 
@@ -98,3 +98,32 @@ class ModelTests(TestCase):
             self.assertEqual(getattr(user, k), v)
 
         self.assertTrue(user.check_password(payload['password']))
+
+    def test_create_document(self):
+        """
+        Test creating a new document
+        """
+        payload = {
+            'title': 'Test Document',
+            'repository_uri': 'https://example.com',
+        }
+
+        document = cm.Document.objects.create(**payload)
+
+        for k, v in payload.items():
+            self.assertEqual(getattr(document, k), v)
+
+    def test_create_document_with_status(self):
+        """
+        Test creating a new document with status
+        """
+        payload = {
+            'title': 'Test Document',
+            'repository_uri': 'https://example.com',
+            'status': 'R',
+        }
+
+        document = cm.Document.objects.create(**payload)
+
+        for k, v in payload.items():
+            self.assertEqual(getattr(document, k), v)
