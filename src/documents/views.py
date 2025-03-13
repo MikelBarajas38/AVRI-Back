@@ -14,6 +14,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
     """
     serializer_class = serializers.DocumentSerializer
     queryset = Document.objects.all()
+    http_method_names = ['get']
     filter_backends = [OrderingFilter]
     ordering_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
