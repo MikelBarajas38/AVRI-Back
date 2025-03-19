@@ -4,7 +4,11 @@ Views for the documents API
 
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter
-from core.models import Document
+
+from core.models import (
+    Document
+)
+
 from documents import serializers
 
 
