@@ -4,6 +4,7 @@ Tests for models.
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+
 import core.models as cm
 
 
@@ -71,7 +72,7 @@ class ModelTests(TestCase):
 
         field = cm.FieldOfStudy.objects.create(name=name)
 
-        self.assertEqual(field.name, name)
+        self.assertEqual(str(field), name)
 
     def test_create_user_full_data(self):
         """
