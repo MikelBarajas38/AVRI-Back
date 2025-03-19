@@ -10,7 +10,8 @@ from documents import views
 
 
 router = DefaultRouter()
-router.register('documents', views.DocumentViewSet)
+
+router.register('', views.DocumentViewSet, basename='document')
 
 app_name = 'documents'
 
