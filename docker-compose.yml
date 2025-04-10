@@ -24,6 +24,9 @@ services:
       - DB_PASS=devpass
     depends_on:
       - db
+    networks:
+      - default
+      - ragflow
 
   db:
     image: postgres:17-alpine
@@ -37,3 +40,11 @@ services:
 volumes:
 
   dev-db-data:
+
+networks:
+
+  default:
+    name: avri-back_default
+  ragflow:
+    external: ${USE_RAGFLOW}
+    name: docker_ragflow

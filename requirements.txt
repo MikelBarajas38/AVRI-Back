@@ -1,7 +1,5 @@
 django>=5.1.6,<5.2
 djangorestframework>=3.15.2,<3.16
 requests>=2.32.3,<2.33
-psycopg[c]>=3.2.4,<3.3
+psycopg[c]>=3.2.6,<3.3
 drf-spectacular>=0.28.0,<0.29
-ragflow-sdk>=0.13.0,<0.14
-openai>=1.66.5,<1.67
