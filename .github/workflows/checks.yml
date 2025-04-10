@@ -7,6 +7,8 @@ jobs:
   test-lint:
     name: Test and Lint
     runs-on: ubuntu-24.04
+    env:
+      USE_RAGFLOW: false
     steps:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
