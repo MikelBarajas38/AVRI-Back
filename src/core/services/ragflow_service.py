@@ -69,7 +69,6 @@ class RAGFlowService:
         )
         print(json.dumps(session, indent=2))
 
-
     def list_assistants(
             self,
             name: Optional[str] = None

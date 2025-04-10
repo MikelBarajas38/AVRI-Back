@@ -30,7 +30,12 @@ def get_session_name_from_query(query: str) -> str:
         )
 
         if titler_session_response.get('code') != 0:
-            raise Exception(titler_session_response.get('message', 'Error creating session'))
+            raise Exception(
+                titler_session_response.get(
+                    'message',
+                    'Error creating session'
+                )
+            )
 
         session_id = titler_session_response['data']['id']
 
@@ -41,7 +46,12 @@ def get_session_name_from_query(query: str) -> str:
         )
 
         if title_response.get('code') != 0:
-            raise Exception(title_response.get('message', 'Error getting title'))
+            raise Exception(
+                title_response.get(
+                    'message',
+                    'Error getting title'
+                )
+            )
 
         title = title_response['data']['answer']
 
@@ -59,7 +69,6 @@ def get_session_name_from_query(query: str) -> str:
     except Exception as e:
 
         raise Exception(f'Failed to get chat title: {str(e)}')
-
 
 
 class ChatSessionViewSet(viewsets.ModelViewSet):
@@ -84,9 +93,11 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Return only the authenticated user's chat sessions ordered by created_at (newest first).
+        Return only the authenticated user's chat sessions
+        ordered by created_at (newest first).
         """
-        return self.queryset.filter(user=self.request.user).order_by('-created_at')
+        user_queryset = self.queryset.filter(user=self.request.user)
+        return user_queryset.order_by('-created_at')
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -106,7 +117,12 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
             )
 
             if messages_response.get('code') != 0:
-                raise Exception(messages_response.get('message', 'Error retrieving messages'))
+                raise Exception(
+                    messages_response.get(
+                        'message',
+                        'Error retrieving messages'
+                    )
+                )
 
             data['code'] = 200
             data['data'] = messages_response.get('data', [])
@@ -138,7 +154,12 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
             )
 
             if response.get('code') != 0:
-                raise Exception(response.get('message', 'Error creating session'))
+                raise Exception(
+                    response.get(
+                        'message',
+                        'Error creating session'
+                    )
+                )
 
             session_id = response['data']['id']
 
