@@ -25,8 +25,16 @@ class ChatSessionDetailSerializer(ChatSessionSerializer):
     Serializer for chat session detail objects.
     """
     class Meta(ChatSessionSerializer.Meta):
-        fields = ChatSessionSerializer.Meta.fields + ['created_at', 'updated_at']
-        read_only_fields = ['session_id', 'user', 'created_at', 'updated_at']
+        fields = ChatSessionSerializer.Meta.fields + [
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = [
+            'session_id',
+            'user',
+            'created_at',
+            'updated_at'
+        ]
 
 
 class QuerySerializer(serializers.Serializer):
