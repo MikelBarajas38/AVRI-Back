@@ -3,6 +3,7 @@ Database models.
 """
 
 from django.db import models
+
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -112,6 +113,46 @@ class Document(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class AuthoredDocument(models.Model):
+    """
+    Author and authored document relationship model.
+    """
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True
+    )
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        null=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.author} - {self.document}'
+
+
+class SavedDocument(models.Model):
+    """
+    User and bookmarked document model.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True
+    )
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        null=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.user} - {self.document}'
 
 
 class ChatSession(models.Model):

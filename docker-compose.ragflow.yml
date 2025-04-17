@@ -1,0 +1,12 @@
+services:
+  app:
+    networks:
+      - default
+      - ragflow
+
+networks:
+  default:
+    name: avri-back_default
+  ragflow:
+    external: true
+    name: docker_ragflow
