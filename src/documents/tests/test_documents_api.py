@@ -44,7 +44,7 @@ def create_document(**params):
 
 class PublicDocumentsApiTests(TestCase):
     """
-    Test the documents API (public).
+    Test the public documents API (Unauthenticated).
     """
 
     def setUp(self):
