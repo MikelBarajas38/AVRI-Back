@@ -116,6 +116,8 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
                 session_id=instance.session_id
             )
 
+            print(messages_response)
+
             if messages_response.get('code') != 0:
                 raise Exception(
                     messages_response.get(
@@ -165,6 +167,7 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 
             serializer.save(
                 user=self.request.user,
+                assistant_id=os.getenv('RAGFLOW_ASSISTANT_ID'),
                 session_id=session_id,
                 session_name=session_name,
             )
