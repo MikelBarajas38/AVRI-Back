@@ -26,7 +26,6 @@ services:
       - db
     networks:
       - default
-      - ragflow
 
   db:
     image: postgres:17-alpine
@@ -45,6 +44,3 @@ networks:
 
   default:
     name: avri-back_default
-  ragflow:
-    external: ${USE_RAGFLOW}
-    name: docker_ragflow
