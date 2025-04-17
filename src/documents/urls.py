@@ -13,6 +13,18 @@ router = DefaultRouter()
 
 router.register('', views.DocumentViewSet, basename='document')
 
+router.register(
+    'saved',
+    views.SavedDocumentViewSet,
+    basename='saved-document'
+)
+
+router.register(
+    'authored',
+    views.AuthoredDocumentViewSet,
+    basename='authored-document'
+)
+
 app_name = 'documents'
 
 urlpatterns = [
