@@ -2,6 +2,8 @@
 Database models.
 """
 
+import uuid
+
 from django.db import models
 
 from django.contrib.auth.models import (
@@ -16,15 +18,23 @@ class UserManager(BaseUserManager):
     Manager for custom user model.
     """
 
-    def create_user(self, email, password=None, **extra_fields):
+    def create_user(self, email=None, password=None, is_anonymous=False, **extra_fields):
         """
         Create, save and return a new user.
         """
-        if not email:
-            raise ValueError('Email is required.')
 
-        user = self.model(email=self.normalize_email(email), **extra_fields)
-        user.set_password(password)
+        if is_anonymous:
+            extra_fields.setdefault('is_anonymous', True)
+            extra_fields.setdefault('anonymous_id', uuid.uuid4())
+            user = self.model(**extra_fields)
+            user.set_unusable_password()
+        else:
+            if not email:
+                raise ValueError('The Email field must be set for non-anonymous users')
+            user = self.model(email=self.normalize_email(email), **extra_fields)
+            if password:
+                user.set_password(password)
+
         user.save(using=self._db)
 
         return user
@@ -45,13 +55,21 @@ class User(AbstractBaseUser, PermissionsMixin):
     """
     Custom user model.
     """
-    email = models.EmailField(max_length=255, unique=True)
+    email = models.EmailField(max_length=255, unique=True, null=True)
     name = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255, null=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_author = models.BooleanField(default=False)
+
+    is_anonymous = models.BooleanField(default=False)
+    anonymous_id = models.UUIDField(
+        default=None,
+        null=True,
+        blank=True,
+        unique=True
+    )
 
     EDUCATION_LEVELS = {
         'N': 'Sin estudios',
@@ -75,6 +93,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'  # Default field for authentication
+
+    def __str__(self):
+        if self.is_anonymous:
+            return f'Anonymous User {self.anonymous_id}'
+        return self.email
 
 
 class FieldOfStudy(models.Model):
@@ -166,27 +189,9 @@ class ChatSession(models.Model):
         on_delete=models.CASCADE,
         null=True
     )
-    anonymous_session_id = models.UUIDField(
-        default=None,
-        null=True,
-        blank=True
-    )
     assistant_id = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        if self.user:
-            return f'{self.user.name} - {self.session_name}'
-        return f'Anonymous session - {self.session_name}'
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=(
-                    models.Q(user__isnull=False, anonymous_session_id__isnull=True) |
-                    models.Q(user__isnull=True, anonymous_session_id__isnull=False)
-                ),
-                name='user_xor_anonymous'
-            )
-        ]
+        return f'{self.user} - {self.session_name}'
