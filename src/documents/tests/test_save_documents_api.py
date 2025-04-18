@@ -118,8 +118,8 @@ class SaveDocumentApiTests(TestCase):
         res = self.client.post(url)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn('error', res.data)
-        self.assertEqual(res.data['error'], 'Document already added')
+        self.assertIn('detail', res.data)
+        self.assertEqual(res.data['detail'], 'Document already added')
 
     def test_list_saved_documents(self):
         """
