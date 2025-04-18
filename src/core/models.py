@@ -166,9 +166,27 @@ class ChatSession(models.Model):
         on_delete=models.CASCADE,
         null=True
     )
+    anonymous_session_id = models.UUIDField(
+        default=None,
+        null=True,
+        blank=True
+    )
     assistant_id = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.session_name
+        if self.user:
+            return f'{self.user.name} - {self.session_name}'
+        return f'Anonymous session - {self.session_name}'
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(user__isnull=False, anonymous_session_id__isnull=True) |
+                    models.Q(user__isnull=True, anonymous_session_id__isnull=False)
+                ),
+                name='user_xor_anonymous'
+            )
+        ]
