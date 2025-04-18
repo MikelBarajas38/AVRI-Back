@@ -49,14 +49,14 @@ class RAGFlowService:
         session_id = session['data']['id']
         print(f'Session ID: {session_id}')
 
-        response = ragflow_service.ask_question(
+        response = ragflow_service.ask(
             assistant_id=id,
             question='Hello',
             session_id=session_id,
         )
         print(json.dumps(response, indent=2))
 
-        response = ragflow_service.ask_question(
+        response = ragflow_service.ask(
             assistant_id=id,
             question='Tell me about breast cancer',
             session_id=session_id_1,
@@ -135,7 +135,7 @@ class RAGFlowService:
         response.raise_for_status()
         return response.json()
 
-    def ask_question(
+    def ask(
         self,
         assistant_id: str,
         question: str,
