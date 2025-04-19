@@ -48,6 +48,26 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
+class AnonymousUserSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the anonymous user object.
+    """
+
+    class Meta:
+        model = get_user_model()
+        fields = ('is_anonymous', 'anonymous_id')
+        read_only_fields = ('is_anonymous', 'anonymous_id')
+
+    def create(self, validated_data):
+        """
+        Create a new anonymous user and return it.
+        """
+        return get_user_model().objects.create_user(
+            is_anonymous=True,
+            **validated_data
+        )
+
+
 class AuthTokenSerializer(serializers.Serializer):
     """
     Serializer for the user authentication token.
@@ -69,6 +89,30 @@ class AuthTokenSerializer(serializers.Serializer):
             username=email,
             password=password
         )
+
+        if not user:
+            msg = 'Unable to authenticate with provided credentials.'
+            raise serializers.ValidationError(msg, code='authorization')
+
+        attrs['user'] = user
+        return attrs
+
+
+class AnonymousAuthTokenSerializer(serializers.Serializer):
+    """
+    Serializer for the anonymous user authentication token.
+    """
+    anonymous_id = serializers.UUIDField()
+
+    def validate(self, attrs):
+        """
+        Validate and authenticate the anonymous user.
+        """
+        anonymous_id = attrs.get('anonymous_id')
+        user = get_user_model().objects.filter(
+            anonymous_id=anonymous_id,
+            is_anonymous=True
+        ).first()
 
         if not user:
             msg = 'Unable to authenticate with provided credentials.'

@@ -18,7 +18,13 @@ class UserManager(BaseUserManager):
     Manager for custom user model.
     """
 
-    def create_user(self, email=None, password=None, is_anonymous=False, **extra_fields):
+    def create_user(
+            self,
+            email=None,
+            password=None,
+            is_anonymous=False,
+            **extra_fields
+    ):
         """
         Create, save and return a new user.
         """
@@ -30,8 +36,13 @@ class UserManager(BaseUserManager):
             user.set_unusable_password()
         else:
             if not email:
-                raise ValueError('The Email field must be set for non-anonymous users')
-            user = self.model(email=self.normalize_email(email), **extra_fields)
+                raise ValueError(
+                    'The Email field must be set for non-anonymous users'
+                )
+            user = self.model(
+                email=self.normalize_email(email),
+                **extra_fields
+            )
             if password:
                 user.set_password(password)
 

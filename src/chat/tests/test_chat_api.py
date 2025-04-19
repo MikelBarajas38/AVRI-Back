@@ -2,8 +2,6 @@
 Test the chat API
 """
 
-import os
-
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -17,8 +15,6 @@ from core.models import ChatSession
 
 from chat.serializers import (
     ChatSessionSerializer,
-    ChatSessionDetailSerializer,
-    QuerySerializer
 )
 
 
@@ -47,7 +43,7 @@ def create_chat_session(**params):
         'session_id': 'test-session-id',
         'session_name': 'Test-session',
         'user': None,
-        'assistant_id':'test-assistant',
+        'assistant_id': 'test-assistant',
     }
     defaults.update(params)
     chat_session = ChatSession.objects.create(**defaults)
@@ -91,7 +87,8 @@ class PrivateChatApiTests(TestCase):
 
         response = self.client.get(CHAT_SESSION_URL)
 
-        chat_sessions = ChatSession.objects.filter(user=self.user).order_by('-created_at')
+        chat_sessions = ChatSession.objects.filter(user=self.user)
+        chat_sessions = chat_sessions.order_by('-created_at')
         serializer = ChatSessionSerializer(chat_sessions, many=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -134,7 +131,8 @@ class PrivateChatApiTests(TestCase):
     @patch('chat.views.RAGFlowService')
     def test_retrieve_chat_session_fails(self, MockRagFlowService):
         """
-        Test retrieving a chat session fails gracefully, returning available information.
+        Test retrieving a chat session fails gracefully,
+        returning available information.
         """
         mock_ragflow = MockRagFlowService.return_value
         mock_ragflow.list_sessions.return_value = {
@@ -158,7 +156,12 @@ class PrivateChatApiTests(TestCase):
     @patch('chat.views.RAGFlowService')
     @patch('chat.views.get_session_name_from_query')
     @patch('chat.views.os.getenv')
-    def test_create_chat_session(self, mock_getenv, mock_get_session_name_from_query, MockRagFlowService):
+    def test_create_chat_session(
+        self,
+        mock_getenv,
+        mock_get_session_name_from_query,
+        MockRagFlowService
+    ):
         """
         Test creating a new chat session.
         """
@@ -190,12 +193,19 @@ class PrivateChatApiTests(TestCase):
             session_name='Test Session'
         )
 
-        mock_get_session_name_from_query.assert_called_once_with('How do I create a chat session?')
+        mock_get_session_name_from_query.assert_called_once_with(
+            'How do I create a chat session?'
+        )
 
     @patch('chat.views.RAGFlowService')
     @patch('chat.views.get_session_name_from_query')
     @patch('chat.views.os.getenv')
-    def test_create_chat_session_fails(self, mock_getenv, mock_get_session_name_from_query, MockRagFlowService):
+    def test_create_chat_session_fails(
+        self,
+        mock_getenv,
+        mock_get_session_name_from_query,
+        MockRagFlowService
+    ):
         """
         Test creating a new chat session fails.
         """
@@ -214,7 +224,10 @@ class PrivateChatApiTests(TestCase):
 
         response = self.client.post(CHAT_SESSION_URL, payload)
 
-        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_503_SERVICE_UNAVAILABLE
+        )
         self.assertEqual(ChatSession.objects.count(), 0)
 
     @patch('chat.views.RAGFlowService')
@@ -238,7 +251,11 @@ class PrivateChatApiTests(TestCase):
         response = self.client.delete(url)
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(ChatSession.objects.filter(session_id=chat_session.session_id).exists())
+        self.assertFalse(
+            ChatSession.objects.filter(
+                session_id=chat_session.session_id
+            ).exists()
+        )
 
         mock_ragflow.delete_session.assert_called_once_with(
             assistant_id=chat_session.assistant_id,
@@ -265,8 +282,14 @@ class PrivateChatApiTests(TestCase):
         url = detail_url(chat_session.session_id)
         response = self.client.delete(url)
 
-        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
-        self.assertTrue(ChatSession.objects.filter(session_id=chat_session.session_id).exists())
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+        self.assertTrue(ChatSession.objects.filter(
+            session_id=chat_session.session_id
+            ).exists()
+        )
 
     @patch('chat.views.RAGFlowService')
     def test_ask(self, MockRagFlowService):
@@ -294,8 +317,13 @@ class PrivateChatApiTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        updated_session = ChatSession.objects.get(session_id=chat_session.session_id)
-        self.assertNotEqual(updated_session.updated_at, chat_session.updated_at)
+        updated_session = ChatSession.objects.get(
+            session_id=chat_session.session_id
+        )
+        self.assertNotEqual(
+            updated_session.updated_at,
+            chat_session.updated_at
+        )
 
         mock_ragflow.ask.assert_called_once_with(
             assistant_id=chat_session.assistant_id,

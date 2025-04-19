@@ -41,8 +41,8 @@ class AuthoredDocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AuthoredDocument
-        fields = ['id', 'author', 'document', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        fields = ('id', 'author', 'document', 'created_at')
+        read_only_fields = ('id', 'created_at')
 
 
 class SavedDocumentSerializer(serializers.ModelSerializer):
@@ -54,5 +54,5 @@ class SavedDocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SavedDocument
-        fields = ['id', 'user', 'document', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        fields = ('id', 'user', 'document', 'created_at')
+        read_only_fields = ('id', 'created_at')
