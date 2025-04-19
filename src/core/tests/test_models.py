@@ -99,6 +99,20 @@ class ModelTests(TestCase):
 
         self.assertTrue(user.check_password(payload['password']))
 
+    def test_create_anonymous_user(self):
+        """
+        Test creating a new anonymous user
+        """
+        payload = {
+            'is_anonymous': True,
+            'name': 'Anonymous User',
+            'password': 'testpass1234'
+        }
+
+        user = get_user_model().objects.create_user(**payload)
+        self.assertTrue(user.is_anonymous)
+        self.assertIsNotNone(user.anonymous_id)
+
     def test_create_document(self):
         """
         Test creating a new document
@@ -127,3 +141,71 @@ class ModelTests(TestCase):
 
         for k, v in payload.items():
             self.assertEqual(getattr(document, k), v)
+
+    def test_create_authored_document(self):
+        """
+        Test creating a new authored document
+        """
+        user = get_user_model().objects.create_user(
+            email='author@example.com',
+            password='testpass1234'
+        )
+
+        document = cm.Document.objects.create(
+            title='Test Document',
+            repository_uri='https://example.com'
+        )
+
+        authored_document = cm.AuthoredDocument.objects.create(
+            author=user,
+            document=document
+        )
+
+        self.assertEqual(authored_document.author, user)
+        self.assertEqual(authored_document.document, document)
+        self.assertIsNotNone(authored_document.created_at)
+
+    def test_create_saved_document(self):
+        """
+        Test creating a new saved document
+        """
+
+        user = get_user_model().objects.create_user(
+            email='author@example.com',
+            password='testpass1234'
+        )
+
+        document = cm.Document.objects.create(
+            title='Test Document',
+            repository_uri='https://example.com'
+        )
+
+        saved_document = cm.SavedDocument.objects.create(
+            user=user,
+            document=document
+        )
+
+        self.assertEqual(saved_document.user, user)
+        self.assertEqual(saved_document.document, document)
+        self.assertIsNotNone(saved_document.created_at)
+
+    def test_create_chat_session(self):
+        """
+        Test creating a new chat session
+        """
+
+        user = get_user_model().objects.create_user(
+            email='author@example.com',
+            password='testpass1234'
+        )
+
+        session = cm.ChatSession.objects.create(
+            session_id='12345',
+            session_name='Test Session',
+            user=user,
+            assistant_id='assistant_1'
+        )
+
+        self.assertEqual(session.session_id, '12345')
+        self.assertEqual(session.session_name, 'Test Session')
+        self.assertEqual(session.user, user)

@@ -13,8 +13,8 @@ class ChatSessionSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = ChatSession
-        fields = ['session_id', 'session_name', 'user']
-        read_only_fields = ['session_id', 'user']
+        fields = ('session_id', 'session_name', 'user')
+        read_only_fields = ('session_id', 'user')
         extra_kwargs = {
             'session_name': {'required': True, 'allow_blank': False}
         }
@@ -25,16 +25,16 @@ class ChatSessionDetailSerializer(ChatSessionSerializer):
     Serializer for chat session detail objects.
     """
     class Meta(ChatSessionSerializer.Meta):
-        fields = ChatSessionSerializer.Meta.fields + [
+        fields = ChatSessionSerializer.Meta.fields + (
             'created_at',
             'updated_at'
-        ]
-        read_only_fields = [
+        )
+        read_only_fields = (
             'session_id',
             'user',
             'created_at',
             'updated_at'
-        ]
+        )
 
 
 class QuerySerializer(serializers.Serializer):

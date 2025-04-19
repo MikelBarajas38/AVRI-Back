@@ -98,7 +98,7 @@ class SavedDocumentViewSet(viewsets.GenericViewSet):
             document = Document.objects.get(id=document_id)
         except Document.DoesNotExist:
             return Response(
-                {'error': 'Document not found'},
+                {'detail': 'Document not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -120,7 +120,7 @@ class SavedDocumentViewSet(viewsets.GenericViewSet):
             )
         else:
             return Response(
-                {'error': 'Document already added'},
+                {'detail': 'Document already added'},
                 status=status.HTTP_200_OK
             )
 
@@ -145,7 +145,7 @@ class SavedDocumentViewSet(viewsets.GenericViewSet):
             )
         except SavedDocument.DoesNotExist:
             return Response(
-                {'error': 'Saved document not found'},
+                {'detail': 'Saved document not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -191,7 +191,7 @@ class AuthoredDocumentViewSet(viewsets.GenericViewSet):
             document = Document.objects.get(id=document_id)
         except Document.DoesNotExist:
             return Response(
-                {'error': 'Document not found'},
+                {'detail': 'Document not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -213,7 +213,7 @@ class AuthoredDocumentViewSet(viewsets.GenericViewSet):
             )
         else:
             return Response(
-                {'error': 'Document already added'},
+                {'detail': 'Document already added'},
                 status=status.HTTP_200_OK
             )
 
@@ -238,6 +238,6 @@ class AuthoredDocumentViewSet(viewsets.GenericViewSet):
             )
         except AuthoredDocument.DoesNotExist:
             return Response(
-                {'error': 'Authored document not found'},
+                {'detail': 'Authored document not found'},
                 status=status.HTTP_404_NOT_FOUND
             )

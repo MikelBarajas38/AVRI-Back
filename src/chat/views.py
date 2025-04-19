@@ -15,6 +15,8 @@ from core.services.ragflow_service import RAGFlowService
 
 from chat import serializers
 
+from chat.exceptions import RagflowException
+
 
 def get_session_name_from_query(query: str) -> str:
     """
@@ -39,7 +41,7 @@ def get_session_name_from_query(query: str) -> str:
 
         session_id = titler_session_response['data']['id']
 
-        title_response = ragflow.ask_question(
+        title_response = ragflow.ask(
             assistant_id=os.getenv('RAGFLOW_TITLER_ID'),
             question=query,
             session_id=session_id
@@ -116,8 +118,6 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
                 session_id=instance.session_id
             )
 
-            print(messages_response)
-
             if messages_response.get('code') != 0:
                 raise Exception(
                     messages_response.get(
@@ -135,7 +135,7 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 
             data['code'] = 500
             data['data'] = []
-            data['error'] = str(e)
+            data['detail'] = str(e)
             return Response(data)
 
     def perform_create(self, serializer):
@@ -174,9 +174,8 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
 
-            return Response(
-                {'error': f'Failed to create session: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST
+            raise RagflowException(
+                f'Failed to create chat session: {str(e)}'
             )
 
     def perform_destroy(self, instance):
@@ -187,17 +186,25 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 
         try:
 
-            ragflow.delete_session(
+            response = ragflow.delete_session(
                 assistant_id=instance.assistant_id,
                 session_ids=[instance.session_id]
             )
+
+            if response.get('code') != 0:
+                raise Exception(
+                    response.get(
+                        'message',
+                        'Error deleting session'
+                    )
+                )
+
             instance.delete()
 
         except Exception as e:
 
-            return Response(
-                {'error': f'Failed to delete session: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST
+            raise RagflowException(
+                f'Failed to delete chat session: {str(e)}'
             )
 
     @action(detail=True, methods=['post'])
@@ -210,7 +217,7 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 
         if not question:
             return Response(
-                {'error': 'Question is required'},
+                {'detail': 'Question is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -218,10 +225,10 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 
         try:
 
-            response = ragflow.ask_question(
+            response = ragflow.ask(
                 assistant_id=session.assistant_id,
-                question=question,
-                session_id=session.session_id
+                session_id=session.session_id,
+                question=question
             )
 
             session.save(update_fields=['updated_at'])
@@ -231,6 +238,6 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
         except Exception as e:
 
             return Response(
-                {'error': f'Failed to get completion: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'detail': f'Failed to get completion: {str(e)}'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
