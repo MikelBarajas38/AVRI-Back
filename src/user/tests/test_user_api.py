@@ -15,7 +15,9 @@ from core.models import FieldOfStudy
 
 
 CREATE_USER_URL = reverse('user:create')
+CREATE_ANONYMOUS_USER_URL = reverse('user:create-anonymous')
 TOKEN_URL = reverse('user:token')
+TOKEN_ANONYMOUS_URL = reverse('user:token-anonymous')
 ME_URL = reverse('user:me')
 LIST_URL = reverse('user:list')
 
@@ -185,6 +187,99 @@ class PublicUserApiTests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
 
+class PublicAnonymousUserApiTests(TestCase):
+    """
+    Test the public features of the anonymous user API (unauthenticated).
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_create_anonymous_user(self):
+        """
+        Test creating an anonymous user with valid payload is successful.
+        """
+        payload = {
+            'is_anonymous': True,
+        }
+
+        res = self.client.post(CREATE_ANONYMOUS_USER_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        user = get_user_model().objects.get(is_anonymous=True)
+
+        self.assertTrue(user.is_anonymous)
+        self.assertEqual(str(user.anonymous_id), res.data['anonymous_id'])
+
+    def test_create_anonymous_token_for_user(self):
+        """
+        Test that a token is created for the anonymous user.
+        """
+        user_payload = {
+            'is_anonymous': True,
+        }
+
+        user = create_user(**user_payload)
+
+        payload = {
+            'anonymous_id': str(user.anonymous_id),
+        }
+
+        res = self.client.post(TOKEN_ANONYMOUS_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('token', res.data)
+
+    def test_create_anonymous_token_invalid_credentials(self):
+        """
+        Test that token is not created if invalid credentials are given.
+        """
+        payload = {
+            'anonymous_id': 'invalid-anonymous-id',
+        }
+
+        res = self.client.post(TOKEN_ANONYMOUS_URL, payload)
+
+        self.assertNotIn('token', res.data)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_anonymous_token_blank_id(self):
+        """
+        Test that token is not created if anonymous_id is blank.
+        """
+        payload = {
+            'anonymous_id': '',
+        }
+
+        res = self.client.post(TOKEN_ANONYMOUS_URL, payload)
+
+        self.assertNotIn('token', res.data)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_list_all_excludes_anonymous_users(self):
+        """
+        Test retrieving list of registered users excludes anonymous users
+        """
+        create_user(**{
+            'email': 'test@example.com',
+            'password': 'password1234',
+            'name': 'Test Name 1'
+        })
+
+        create_user(**{
+            'is_anonymous': True,
+        })
+
+        users = get_user_model().objects.filter(is_anonymous=False)
+        serializer = UserSerializer(users, many=True)
+
+        res = self.client.get(LIST_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+
 class PrivateUserApiTests(TestCase):
     """
     Test the private features of the user API (authenticated).
@@ -249,3 +344,32 @@ class PrivateUserApiTests(TestCase):
         self.assertEqual(self.user.name, payload['name'])
         self.assertTrue(self.user.check_password(payload['password']))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+
+class PrivateAnonymousUserApiTests(TestCase):
+    """
+    Test the private features of the anonymous user API (authenticated).
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+
+        payload = {
+            'is_anonymous': True,
+        }
+
+        self.user = create_user(**payload)
+        self.client.force_authenticate(user=self.user)
+
+    def test_retrieve_anonymous_profile_success(self):
+        """
+        Test retrieving profile for logged in anonymous user
+        (and that anon tokens work as expected).
+        """
+        res = self.client.get(ME_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, {
+            'is_anonymous': True,
+            'anonymous_id': str(self.user.anonymous_id),
+        })
