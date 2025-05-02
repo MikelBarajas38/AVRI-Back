@@ -87,6 +87,61 @@ class DocumentAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
 
 
+class AuthoredDocumentAdmin(admin.ModelAdmin):
+    """
+    Define the admin pages for authored documents.
+    """
+    ordering = ['-created_at']
+    list_display = ['author', 'document', 'created_at']
+    fieldsets = (
+        (None, {
+            'fields': ('author', 'document')
+        }),
+        ('Important dates', {
+            'fields': ('created_at',)
+        }),
+    )
+    readonly_fields = ['created_at']
+
+
+class SavedDocumentAdmin(admin.ModelAdmin):
+    """
+    Define the admin pages for saved documents.
+    """
+    ordering = ['-created_at']
+    list_display = ['user', 'document', 'created_at']
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'document')
+        }),
+        ('Important dates', {
+            'fields': ('created_at',)
+        }),
+    )
+    readonly_fields = ['created_at']
+
+
+class ChatSessionAdmin(admin.ModelAdmin):
+    """
+    Define the admin pages for chat sessions.
+    """
+    ordering = ['-created_at']
+    list_display = ['user', 'session_name', 'created_at', 'updated_at']
+    fieldsets = (
+        (None, {
+            'fields': ('session_id', 'session_name', 'user', 'assistant_id')
+        }),
+        ('Important dates', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
+    readonly_fields = ['created_at', 'updated_at']
+    search_fields = ['session_name', 'assistant_id', 'user__email']
+
+
 admin.site.register(models.User, UserAdmin)
 admin.site.register(models.FieldOfStudy)
 admin.site.register(models.Document, DocumentAdmin)
+admin.site.register(models.AuthoredDocument, AuthoredDocumentAdmin)
+admin.site.register(models.SavedDocument, SavedDocumentAdmin)
+admin.site.register(models.ChatSession, ChatSessionAdmin)
