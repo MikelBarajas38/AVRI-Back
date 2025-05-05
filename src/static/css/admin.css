@@ -29,7 +29,7 @@ html[data-theme="dark"] {
     /* tables */
     --selected-row: #777777;
     --link-fg: white;
-    --link-hover-color:
+    --link-hover-color: #9cd1ff;
 }
 
 /* prefers-color-scheme: dark */
@@ -38,7 +38,7 @@ html[data-theme="dark"] {
         --darkened-bg: #182128;
         --selected-row: #777777;
         --link-fg: white;
-        --link-hover-color: #d5eafc;
+        --link-hover-color: #9cd1ff;
     }
 }
 
