@@ -1,0 +1,20 @@
+<!-- load static -->
+{% extends "admin/base.html" %}
+{% load static %}
+
+
+{% block branding %}
+<!-- header title -->
+<span class="header-title">Repositorio <strong>Institucional</strong></span>
+
+<!-- Image header -->
+<img class="header-img" src={% static 'images/Logo-Biblioteca.png' %} />
+{% endblock %}
+
+
+{% block extrastyle %}
+<!-- styles -->
+{{ block.super }}
+<link rel="stylesheet" href={% static 'css/admin.css' %}>
+<link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+{% endblock %}
