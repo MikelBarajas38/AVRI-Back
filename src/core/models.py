@@ -126,12 +126,11 @@ class Document(models.Model):
     """
     Document model.
     """
+    id = models.CharField(primary_key=True, max_length=255)
     title = models.CharField(max_length=255)
     repository_uri = models.URLField()
     created_at = models.DateTimeField(auto_now_add=True)
-    # created_at = models.DateTimeField()
     updated_at = models.DateTimeField(auto_now=True)
-    # updated_at = models.DateTimeField()
 
     DOCUMENT_STATUS = {
         'L': 'Acceso libre',

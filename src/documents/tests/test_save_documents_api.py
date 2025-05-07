@@ -47,6 +47,7 @@ def create_document(**params):
     Helper function to create a sample document.
     """
     defaults = {
+        'id': '1',
         'title': 'Test document',
         'repository_uri': 'https://example.com',
         'status': 'L',

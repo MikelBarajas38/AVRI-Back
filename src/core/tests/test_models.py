@@ -118,6 +118,7 @@ class ModelTests(TestCase):
         Test creating a new document
         """
         payload = {
+            'id': '12345',
             'title': 'Test Document',
             'repository_uri': 'https://example.com',
         }
@@ -132,6 +133,7 @@ class ModelTests(TestCase):
         Test creating a new document with status
         """
         payload = {
+            'id': '12345',
             'title': 'Test Document',
             'repository_uri': 'https://example.com',
             'status': 'R',
@@ -152,6 +154,7 @@ class ModelTests(TestCase):
         )
 
         document = cm.Document.objects.create(
+            id='12345',
             title='Test Document',
             repository_uri='https://example.com'
         )
@@ -176,6 +179,7 @@ class ModelTests(TestCase):
         )
 
         document = cm.Document.objects.create(
+            id='12345',
             title='Test Document',
             repository_uri='https://example.com'
         )
