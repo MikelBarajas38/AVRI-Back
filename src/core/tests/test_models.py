@@ -199,7 +199,7 @@ class ModelTests(TestCase):
         """
 
         user = get_user_model().objects.create_user(
-            email='author@example.com',
+            email='test@example.com',
             password='testpass1234'
         )
 
@@ -213,3 +213,43 @@ class ModelTests(TestCase):
         self.assertEqual(session.session_id, '12345')
         self.assertEqual(session.session_name, 'Test Session')
         self.assertEqual(session.user, user)
+
+    def test_create_sus_survey_response(self):
+        """
+        Test creating a new satisfaction survey response
+        """
+
+        user = get_user_model().objects.create_user(
+            email='test@example.com',
+            password='testpass1234'
+        )
+
+        payload = {
+            'user': user,
+            'version': '1.0',
+            'response_data': {
+                'q1': 4,
+                'q2': 2,
+                'q3': 4,
+                'q4': 3,
+                'q5': 5,
+                'q6': 2,
+                'q7': 4,
+                'q8': 3,
+                'q9': 4,
+                'q10': 2,
+                'comments': 'Smooth experience, minor issues.'
+            },
+        }
+
+        survey_response = cm.SatisfactionSurveyResponse.objects.create(
+            **payload
+        )
+
+        self.assertEqual(survey_response.user, user)
+        self.assertEqual(survey_response.version, payload['version'])
+        self.assertEqual(
+            survey_response.response_data,
+            payload['response_data']
+        )
+        self.assertIsNotNone(survey_response.completed_at)
