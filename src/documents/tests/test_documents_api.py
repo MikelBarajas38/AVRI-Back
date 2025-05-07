@@ -33,6 +33,7 @@ def create_document(**params):
     Helper function to create a sample document.
     """
     defaults = {
+        'id': '1',
         'title': 'Test document',
         'repository_uri': 'https://example.com',
         'status': 'L',
@@ -57,8 +58,8 @@ class PublicDocumentsApiTests(TestCase):
         """
         Test retrieving a list of documents.
         """
-        create_document(**{'title': 'Document 1'})
-        create_document(**{'title': 'Document 2'})
+        create_document(**{'id': '1', 'title': 'Document 1'})
+        create_document(**{'id': '2', 'title': 'Document 2'})
 
         res = self.client.get(DOCUMENTS_URL)
 
@@ -76,18 +77,21 @@ class PublicDocumentsApiTests(TestCase):
         now = datetime.now()
 
         create_document(**{
+            'id': '1',
             'title': 'Document 1',
             'created_at': now - timedelta(days=1),
             'updated_at': now - timedelta(days=3)
         })
 
         create_document(**{
+            'id': '2',
             'title': 'Document 2',
             'created_at': now - timedelta(days=2),
             'updated_at': now - timedelta(days=2)
         })
 
         create_document(**{
+            'id': '3',
             'title': 'Document 3',
             'created_at': now - timedelta(days=3),
             'updated_at': now - timedelta(days=1)
@@ -109,18 +113,21 @@ class PublicDocumentsApiTests(TestCase):
         now = datetime.now()
 
         create_document(**{
+            'id': '1',
             'title': 'Document 1',
             'created_at': now - timedelta(days=1),
             'updated_at': now - timedelta(days=3)
         })
 
         create_document(**{
+            'id': '2',
             'title': 'Document 2',
             'created_at': now - timedelta(days=2),
             'updated_at': now - timedelta(days=2)
         })
 
         create_document(**{
+            'id': '3',
             'title': 'Document 3',
             'created_at': now - timedelta(days=3),
             'updated_at': now - timedelta(days=1)
