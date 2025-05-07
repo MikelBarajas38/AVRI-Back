@@ -62,7 +62,8 @@ class DocumentAdmin(admin.ModelAdmin):
     Define the admin pages for documents.
     """
     ordering = ['id']
-    list_display = ['title', 'created_at']
+    list_display = ['title', 'created_at', 'status']
+    list_filter = ['status']
     fieldsets = (
         (None, {'fields': ('title',)}),
         (
@@ -93,6 +94,7 @@ class AuthoredDocumentAdmin(admin.ModelAdmin):
     """
     ordering = ['-created_at']
     list_display = ['author', 'document', 'created_at']
+    list_filter = ['author']
     fieldsets = (
         (None, {
             'fields': ('author', 'document')
@@ -110,6 +112,7 @@ class SavedDocumentAdmin(admin.ModelAdmin):
     """
     ordering = ['-created_at']
     list_display = ['user', 'document', 'created_at']
+    list_filter = ['user']
     fieldsets = (
         (None, {
             'fields': ('user', 'document')
@@ -127,6 +130,7 @@ class ChatSessionAdmin(admin.ModelAdmin):
     """
     ordering = ['-created_at']
     list_display = ['user', 'session_name', 'created_at', 'updated_at']
+    list_filter = ['user']
     fieldsets = (
         (None, {
             'fields': ('session_id', 'session_name', 'user', 'assistant_id')
