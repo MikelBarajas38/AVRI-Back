@@ -2,8 +2,6 @@
 Views for the recommender API.
 """
 
-import os
-
 from rest_framework import viewsets, generics
 from rest_framework import authentication, permissions
 from rest_framework.decorators import action
@@ -16,7 +14,10 @@ from core.services.ragflow_service import RAGFlowService
 from recommender import serializers
 
 
-def get_recommendations(user_profile: UserProfile, max_recommendations: int) -> list:
+def get_recommendations(
+    user_profile: UserProfile,
+    max_recommendations: int
+) -> list:
     """
     Get document recommendations based on user profile.
     """
@@ -28,7 +29,8 @@ def get_recommendations(user_profile: UserProfile, max_recommendations: int) -> 
 
     for interest in interests:
         response = ragflow.get_chunks(query=interest)
-        if response.get('code') == 0 and len(recommendations) < max_recommendations:
+        if response.get('code') == 0 and \
+           len(recommendations) < max_recommendations:
             chunks = response['data']['chunks']
             for chunk in chunks:
                 if len(recommendations) < max_recommendations:
@@ -39,7 +41,8 @@ def get_recommendations(user_profile: UserProfile, max_recommendations: int) -> 
     document_titles = user_profile.profile.get('document_titles', [])
     for title in document_titles:
         response = ragflow.get_chunks(query=title)
-        if response.get('code') == 0 and len(recommendations) < max_recommendations:
+        if response.get('code') == 0 and \
+           len(recommendations) < max_recommendations:
             chunks = response['data']['chunks']
             for chunk in chunks:
                 if len(recommendations) < max_recommendations:
@@ -66,6 +69,7 @@ class CreateUserProfileView(generics.CreateAPIView):
         Save the user profile with the authenticated user.
         """
         serializer.save(user=self.request.user)
+
 
 class ManageUserProfileView(generics.RetrieveUpdateAPIView):
     """
