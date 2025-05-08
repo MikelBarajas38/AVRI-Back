@@ -4,7 +4,7 @@ Serializers for the recommender API View.
 
 from rest_framework import serializers
 
-from core.models import UserProfile, Document
+from core.models import UserProfile
 
 from documents.serializers import DocumentSerializer
 
