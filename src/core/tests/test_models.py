@@ -172,7 +172,6 @@ class ModelTests(TestCase):
         """
         Test creating a new saved document
         """
-
         user = get_user_model().objects.create_user(
             email='author@example.com',
             password='testpass1234'
@@ -197,7 +196,6 @@ class ModelTests(TestCase):
         """
         Test creating a new chat session
         """
-
         user = get_user_model().objects.create_user(
             email='test@example.com',
             password='testpass1234'
@@ -218,7 +216,6 @@ class ModelTests(TestCase):
         """
         Test creating a new satisfaction survey response
         """
-
         user = get_user_model().objects.create_user(
             email='test@example.com',
             password='testpass1234'
@@ -227,7 +224,7 @@ class ModelTests(TestCase):
         payload = {
             'user': user,
             'version': '1.0',
-            'response_data': {
+            'survey': {
                 'q1': 4,
                 'q2': 2,
                 'q3': 4,
@@ -249,7 +246,31 @@ class ModelTests(TestCase):
         self.assertEqual(survey_response.user, user)
         self.assertEqual(survey_response.version, payload['version'])
         self.assertEqual(
-            survey_response.response_data,
-            payload['response_data']
+            survey_response.survey,
+            payload['survey']
         )
         self.assertIsNotNone(survey_response.completed_at)
+
+    def test_create_user_profile(self):
+        """
+        Test creating a new user profile
+        """
+        user = get_user_model().objects.create_user(
+            email='test@example.com',
+            password='testpass1234'
+        )
+
+        payload = {
+            'user': user,
+            'profile': {
+                'bio': 'This is a test bio.',
+                'keywords': ['python', 'django'],
+                'interests': ['coding', 'reading'],
+            }
+        }
+
+        user_profile = cm.UserProfile.objects.create(**payload)
+        self.assertEqual(user_profile.user, user)
+        self.assertEqual(user_profile.profile, payload['profile'])
+        self.assertIsNotNone(user_profile.created_at)
+        self.assertIsNotNone(user_profile.updated_at)
