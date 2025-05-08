@@ -217,8 +217,25 @@ class SatisfactionSurveyResponse(models.Model):
         related_name='survey_responses'
     )
     version = models.CharField(max_length=255)
-    response_data = models.JSONField()
+    survey = models.JSONField()
     completed_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'{self.user} - {self.completed_at.strftime('%Y-%m-%d')}'
+
+
+class UserProfile(models.Model):
+    """
+    User profile model.
+    """
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='profile'
+    )
+    profile = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.user} profile - {self.created_at.strftime('%Y-%m-%d')}'
