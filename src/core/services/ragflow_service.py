@@ -160,6 +160,27 @@ class RAGFlowService:
         response.raise_for_status()
         return response.json()
 
+    def get_chunks(
+        self,
+        query: str,
+        dataset_ids: List[str] = [os.environ.get('DATASET_ID')],
+    ) -> List[Dict[str, Any]]:
+        """
+        Get chunks from the RAGFlow API.
+        """
+        url = f'{self.base_url}/retrieval'
+        body = {
+            'question': query,
+            'dataset_ids': dataset_ids
+        }
+        response = requests.post(
+            url,
+            headers=self.headers,
+            json=body
+        )
+        response.raise_for_status()
+        return response.json()
+
 
 if __name__ == '__main__':
     ragflow_service = RAGFlowService()
