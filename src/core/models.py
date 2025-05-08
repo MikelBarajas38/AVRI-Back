@@ -129,6 +129,7 @@ class Document(models.Model):
     id = models.CharField(primary_key=True, max_length=255)
     title = models.CharField(max_length=255)
     repository_uri = models.URLField()
+    repository_id = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

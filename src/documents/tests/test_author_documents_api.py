@@ -50,6 +50,7 @@ def create_document(**params):
         'id': '1',
         'title': 'Test document',
         'repository_uri': 'https://example.com',
+        'repository_id': 'repo_1',
         'status': 'L',
     }
     defaults.update(params)
