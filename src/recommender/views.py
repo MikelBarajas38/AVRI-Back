@@ -15,21 +15,41 @@ from core.services.ragflow_service import RAGFlowService
 
 from recommender import serializers
 
-def get_user_profile_string(user_profile: UserProfile) -> str:
-    """
-    Generate user profile string from the UserProfile object.
-    """
-    return f"{user_profile.user.username} - {user_profile.profile}"
-
 
 def get_recommendations(user_profile: UserProfile, max_recommendations: int) -> list:
     """
     Get document recommendations based on user profile.
     """
 
-    #dummy implementation for now
-    documents = Document.objects.all()
-    recommendations = [document.id for document in documents[:max_recommendations]]
+    ragflow = RAGFlowService()
+    recommendations = []
+
+    interests = user_profile.profile.get('interests', [])
+
+    for interest in interests:
+        response = ragflow.get_chunks(query=interest)
+        if response.get('code') == 0 and len(recommendations) < max_recommendations:
+            chunks = response['data']['chunks']
+            for chunk in chunks:
+                if len(recommendations) < max_recommendations:
+                    recommendations.append(chunk['document_id'])
+                else:
+                    break
+
+    document_titles = user_profile.profile.get('document_titles', [])
+    for title in document_titles:
+        response = ragflow.get_chunks(query=title)
+        if response.get('code') == 0 and len(recommendations) < max_recommendations:
+            chunks = response['data']['chunks']
+            for chunk in chunks:
+                if len(recommendations) < max_recommendations:
+                    recommendations.append(chunk['document_id'])
+                else:
+                    break
+
+    recommendations = list(set(recommendations))
+    print(f"Recommendations: {recommendations}")
+
     return recommendations
 
 
