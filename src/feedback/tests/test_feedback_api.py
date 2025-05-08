@@ -22,7 +22,6 @@ def create_user(**params):
     return get_user_model().objects.create_user(**params)
 
 
-
 class PublicFeedbackApiTests(TestCase):
     """
     Test the public feedback API (Unauthenticated).
@@ -52,10 +51,11 @@ class PublicFeedbackApiTests(TestCase):
                 'q9': 4,
                 'q10': 2,
                 'comments': 'Smooth experience, minor issues.'
-            } # User should be set in the view
+            }
         }
         res = self.client.post(FEEDBACK_URL, payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class FeedbackApiTests(TestCase):
     """
@@ -65,7 +65,7 @@ class FeedbackApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = create_user(**{
-             'email': 'test@example.com',
+            'email': 'test@example.com',
             'password': 'testpass1234',
         })
         self.client.force_authenticate(user=self.user)

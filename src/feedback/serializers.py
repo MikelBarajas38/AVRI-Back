@@ -14,7 +14,7 @@ class SatisfactionSurveyResponseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SatisfactionSurveyResponse
-        fields = ('user', 'survey', 'completed_at')
+        fields = ('user', 'survey', 'version', 'completed_at')
         read_only_fields = ('user', 'completed_at')
         extra_kwargs = {
             'survey': {'required': True}

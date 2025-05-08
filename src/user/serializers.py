@@ -25,7 +25,10 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'education_level',
             'field_of_study',
+            'is_staff',
+            'is_author',
         )
+        read_only_fields = ('is_staff',)
         extra_kwargs = {'password': {'write_only': True, 'min_length': 5}}
 
     def create(self, validated_data):
