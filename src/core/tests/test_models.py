@@ -121,6 +121,7 @@ class ModelTests(TestCase):
             'id': '12345',
             'title': 'Test Document',
             'repository_uri': 'https://example.com',
+            'repository_id': 'repo_1',
         }
 
         document = cm.Document.objects.create(**payload)
@@ -136,6 +137,7 @@ class ModelTests(TestCase):
             'id': '12345',
             'title': 'Test Document',
             'repository_uri': 'https://example.com',
+            'repository_id': 'repo_1',
             'status': 'R',
         }
 
@@ -156,7 +158,8 @@ class ModelTests(TestCase):
         document = cm.Document.objects.create(
             id='12345',
             title='Test Document',
-            repository_uri='https://example.com'
+            repository_uri='https://example.com',
+            repository_id='repo_1'
         )
 
         authored_document = cm.AuthoredDocument.objects.create(
@@ -180,7 +183,8 @@ class ModelTests(TestCase):
         document = cm.Document.objects.create(
             id='12345',
             title='Test Document',
-            repository_uri='https://example.com'
+            repository_uri='https://example.com',
+            repository_id='repo_1'
         )
 
         saved_document = cm.SavedDocument.objects.create(
