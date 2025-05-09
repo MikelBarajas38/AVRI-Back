@@ -1,0 +1,22 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block content %}
+{{ block.super }}
+
+<div class="module">
+    <h2>ChatSessions per Day</h2>
+    <canvas id="sessionsByDayChart" style="margin-bottom: 50px;" data-chart='{{ sessions_by_day|safe }}'></canvas>
+
+    <a href="{% url 'admin:chats_over_time_stats_export' %}" class="button" style="margin-bottom: 20px;">Export CSV
+        statistics</a>
+</div>
+
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="{% static 'js/admin_stats.js' %}"></script>
+{% endblock %}
