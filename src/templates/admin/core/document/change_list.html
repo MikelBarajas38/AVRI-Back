@@ -1,0 +1,20 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block content %}
+{{ block.super }}
+<div class="module">
+    <h2>Top Keywords in Document Titles</h2>
+    <canvas id="documentKeywordsChart" width="800" height="200" style="margin-bottom: 50px;"
+        data-chart='{{ document_keywords_data|safe }}'></canvas>
+
+    <a href="{% url 'admin:document_keywords_stats_export' %}" class="button" style="margin-bottom: 20px;">Export CSV
+        statistics</a>
+</div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/admin_stats.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block content %}
+
+{{ block.super }}
+
+<div class="module">
+    <h2>Users by Field of Study</h2>
+    <canvas id="userFieldChart" width="800" height="200" style="margin-bottom: 50px;"
+        data-chart='{{ user_stats_data|safe }}'></canvas>
+
+    <a href="{% url 'admin:user_field_of_study_stats_export' %}" class="button" style="margin-bottom: 20px;">Export CSV
+        statistics</a>
+</div>
+
+<div class="module">
+    <h2>Users by Education Level</h2>
+    <canvas id="educationLevelChart" width="800" height="200" style="margin-bottom: 50px;"
+        data-chart='{{ user_edu_level_data|safe }}'></canvas>
+
+    <a href="{% url 'admin:user_education_level_stats_export' %}" class="button" style="margin-bottom: 20px;">Export CSV
+        statistics</a>
+</div>
+
+<div class="module">
+    <h2>User Activity Status</h2>
+    <canvas id="activityStatusChart" width="800" height="200" style="margin-bottom: 50px;"
+        data-chart='{{ user_activity_status_data|safe }}'></canvas>
+
+    <a href="{% url 'admin:user_activity_status_stats_export' %}" class="button" style="margin-bottom: 20px;">Export CSV
+        statistics</a>
+</div>
+
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="{% static 'js/admin_stats.js' %}"></script>
+{% endblock %}
