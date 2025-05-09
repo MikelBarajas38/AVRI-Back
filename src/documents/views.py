@@ -2,6 +2,8 @@
 Views for the documents API
 """
 
+import requests
+
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
@@ -240,4 +242,86 @@ class AuthoredDocumentViewSet(viewsets.GenericViewSet):
             return Response(
                 {'detail': 'Authored document not found'},
                 status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class RepositoryDocumentViewSet(viewsets.GenericViewSet):
+    """
+    Fetch document metadata from external repository
+    """
+    serializer_class = serializers.RepositoryDocumentSerializer
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    REPO_BASE = 'https://repositorioinstitucional.uaslp.mx/rest/items'
+
+    def get_serializer_class(self):
+        """Return appropriate serializer class."""
+        return self.serializer_class
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path='repository',
+        url_name='repository'
+    )
+    def get_repo_doc(self, request, pk=None):
+        """
+        Fetch document metadata from external repository
+        """
+        try:
+            try:
+                document = Document.objects.get(id=pk)
+            except Document.DoesNotExist:
+                return Response(
+                    {'detail': 'Document not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            repo_id = document.repository_id
+            response = requests.get(f"{self.REPO_BASE}/{repo_id}/metadata", headers={
+                'Accept': 'application/json'
+            })
+
+            if response.status_code != 200:
+                return Response(
+                    {'detail': 'Repository document not found or error accessing repository'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            raw_metadata = response.json()
+            metadata = {}
+
+            for entry in raw_metadata:
+                key = entry['key']
+                value = entry['value']
+                if isinstance(value, list):
+                    metadata[key] = [v for v in value]
+                else:
+                    metadata[key] = value
+
+            print(metadata['dc.contributor.author'])
+
+            repo_doc = {
+                'id': pk,
+                'title': metadata['dc.title'] if 'dc.title' in metadata else 'Unknown Title',
+                'repository_uri': document.repository_uri,
+                'repository_id': repo_id,
+                'status': document.status,
+                'author': metadata['dc.contributor.author'] if 'dc.contributor.author' in metadata else 'Unknown Author',
+                'type': metadata['dc.type'] if 'dc.type' in metadata else 'Unknown Type',
+                'publication_date': metadata['dc.date.issued'] if 'dc.date.issued' in metadata else 'Unknown Date',
+                'knowledge_area': metadata['dc.subject.other'] if 'dc.subject.other' in metadata else 'Unknown Area',
+                'license': metadata['dc.rights.rights'] if 'dc.rights.rights' in metadata else
+                        (metadata['dc.rights'] if 'dc.rights' in metadata else 'Unknown License')
+            }
+
+            serializer = self.get_serializer(data=repo_doc)
+            serializer.is_valid(raise_exception=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except requests.RequestException as e:
+            return Response(
+                {'detail': f'Error fetching document from repository: {str(e)}'},
+                status=status.HTTP_502_BAD_GATEWAY
             )

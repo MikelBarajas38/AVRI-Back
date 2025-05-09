@@ -64,7 +64,7 @@ class DocumentAdmin(admin.ModelAdmin):
     ordering = ['id']
     list_display = ['title', 'created_at']
     fieldsets = (
-        (None, {'fields': ('title',)}),
+        (None, {'fields': ('id', 'title',)}),
         (
             _('Important dates'),
             {
@@ -79,6 +79,7 @@ class DocumentAdmin(admin.ModelAdmin):
             {
                 'fields': (
                     'repository_uri',
+                    'repository_id',
                     'status',
                 )
             }
