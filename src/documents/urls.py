@@ -25,6 +25,12 @@ router.register(
     basename='authored-document'
 )
 
+router.register(
+    '',
+    views.RepositoryDocumentViewSet,
+    basename='repository-document'
+)
+
 app_name = 'documents'
 
 urlpatterns = [

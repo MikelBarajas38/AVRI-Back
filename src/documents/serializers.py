@@ -56,3 +56,19 @@ class SavedDocumentSerializer(serializers.ModelSerializer):
         model = SavedDocument
         fields = ('id', 'user', 'document', 'created_at')
         read_only_fields = ('id', 'created_at')
+
+
+class RepositoryDocumentSerializer(serializers.Serializer):
+    """
+    Serializer for repository document objects.
+    """
+    id = serializers.CharField(max_length=255)
+    title = serializers.CharField(max_length=255)
+    repository_uri = serializers.CharField(max_length=255)
+    repository_id = serializers.CharField(max_length=255)
+    status = serializers.CharField(max_length=1)
+    author = serializers.CharField(max_length=255, allow_blank=True)
+    type = serializers.CharField(max_length=255, allow_blank=True)
+    publication_date = serializers.CharField(max_length=255, allow_blank=True)
+    knowledge_area = serializers.CharField(max_length=255, allow_blank=True)
+    license = serializers.CharField(max_length=255, allow_blank=True)
