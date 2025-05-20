@@ -279,13 +279,18 @@ class RepositoryDocumentViewSet(viewsets.GenericViewSet):
                 )
 
             repo_id = document.repository_id
-            response = requests.get(f"{self.REPO_BASE}/{repo_id}/metadata", headers={
-                'Accept': 'application/json'
-            })
+            response = requests.get(
+                f"{self.REPO_BASE}/{repo_id}/metadata",
+                headers={
+                    'Accept': 'application/json'
+                }
+            )
 
             if response.status_code != 200:
                 return Response(
-                    {'detail': 'Repository document not found or error accessing repository'},
+                    {
+                        'detail': 'Error fetching document'
+                    },
                     status=status.HTTP_404_NOT_FOUND
                 )
 
@@ -304,16 +309,33 @@ class RepositoryDocumentViewSet(viewsets.GenericViewSet):
 
             repo_doc = {
                 'id': pk,
-                'title': metadata['dc.title'] if 'dc.title' in metadata else 'Unknown Title',
+                'title': metadata.get(
+                    'dc.title',
+                    'Unknown Title'
+                ),
                 'repository_uri': document.repository_uri,
                 'repository_id': repo_id,
                 'status': document.status,
-                'author': metadata['dc.contributor.author'] if 'dc.contributor.author' in metadata else 'Unknown Author',
-                'type': metadata['dc.type'] if 'dc.type' in metadata else 'Unknown Type',
-                'publication_date': metadata['dc.date.issued'] if 'dc.date.issued' in metadata else 'Unknown Date',
-                'knowledge_area': metadata['dc.subject.other'] if 'dc.subject.other' in metadata else 'Unknown Area',
-                'license': metadata['dc.rights.rights'] if 'dc.rights.rights' in metadata else
-                        (metadata['dc.rights'] if 'dc.rights' in metadata else 'Unknown License')
+                'author': metadata.get(
+                    'dc.contributor.author',
+                    'Unknown Author'
+                ),
+                'type': metadata.get(
+                    'dc.type',
+                    'Unknown Type'
+                ),
+                'publication_date': metadata.get(
+                    'dc.date.issued',
+                    'Unknown Date'
+                ),
+                'knowledge_area': metadata.get(
+                    'dc.subject.other',
+                    'Unknown Area'
+                ),
+                'license': metadata.get(
+                    'dc.rights.rights',
+                    metadata.get('dc.rights', 'Unknown License')
+                )
             }
 
             serializer = self.get_serializer(data=repo_doc)
@@ -322,6 +344,9 @@ class RepositoryDocumentViewSet(viewsets.GenericViewSet):
 
         except requests.RequestException as e:
             return Response(
-                {'detail': f'Error fetching document from repository: {str(e)}'},
+                {
+                    'detail':
+                    f'Error fetching document {str(e)}'
+                },
                 status=status.HTTP_502_BAD_GATEWAY
             )
