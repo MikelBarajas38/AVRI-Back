@@ -18,8 +18,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Test
-        run: docker compose run --rm app sh -c "python manage.py wait_for_db && coverage run --data-file=/app/coverage/.coverage --source='.' manage.py test"
+        run: docker compose run --rm app sh -c "python manage.py wait_for_db && coverage run --data-file=./coverage/.coverage --source='.' manage.py test"
       - name: Coverage Report
-        run: docker compose run --rm app sh -c "coverage report --data-file=/app/coverage/.coverage --show-missing --fail-under=80"
+        run: docker compose run --rm app sh -c "coverage report --data-file=./coverage/.coverage --show-missing --fail-under=80"
       - name: Lint
         run: docker compose run --rm app sh -c "flake8"
