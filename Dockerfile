@@ -28,7 +28,7 @@ RUN python -m venv /venv && \
     adduser \
         --disabled-password \
         --no-create-home \
-        django
+        django \
     mkdir -p /app/coverage && \
     chown django:django /app/coverage && \
     chmod 755 /app/coverage
