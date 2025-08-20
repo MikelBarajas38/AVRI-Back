@@ -29,6 +29,9 @@ RUN python -m venv /venv && \
         --disabled-password \
         --no-create-home \
         django
+    mkdir -p /app/coverage && \
+    chown django:django /app/coverage && \
+    chmod 755 /app/coverage
 
 ENV PATH="/venv/bin:$PATH"
 
