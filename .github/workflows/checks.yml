@@ -20,6 +20,6 @@ jobs:
       - name: Test
         run: docker compose run --rm app sh -c "python manage.py wait_for_db && coverage run --data-file=/app/cov/.coverage --source='.' manage.py test"
       - name: Coverage Report
-        run: docker compose run --rm app sh -c "overage report --data-file=/app/cov/.coverage --show-missing --fail-under=80"
+        run: docker compose run --rm app sh -c "coverage report --data-file=/app/cov/.coverage --show-missing --fail-under=80"
       - name: Lint
         run: docker compose run --rm app sh -c "flake8"
