@@ -79,6 +79,7 @@ class CreateUserProfileView(generics.CreateAPIView):
         """
         serializer.save(user=self.request.user)
 
+
 class ManageUserProfileView(generics.RetrieveUpdateAPIView):
     """
     View for managing user profiles.
@@ -96,6 +97,7 @@ class ManageUserProfileView(generics.RetrieveUpdateAPIView):
             defaults={'profile': {}}
         )
         return obj
+
 
 class DocumentRecommendationViewSet(viewsets.GenericViewSet):
     """
