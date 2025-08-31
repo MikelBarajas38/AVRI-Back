@@ -47,9 +47,14 @@ html[data-theme="dark"] {
 /* header*/
 #header {
   width: 100vw;
-  height: 30rem;
+  height: 100%;
   flex-direction: column;
   padding: 0 !important;
+}
+
+/* container */
+#container > .main {
+  height: 100%;
 }
 
 /* branding*/
