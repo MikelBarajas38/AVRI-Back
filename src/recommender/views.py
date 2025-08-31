@@ -97,7 +97,6 @@ class ManageUserProfileView(generics.RetrieveUpdateAPIView):
         )
         return obj
 
-
 class DocumentRecommendationViewSet(viewsets.GenericViewSet):
     """
     ViewSet for document recommendations.
@@ -137,4 +136,3 @@ class DocumentRecommendationViewSet(viewsets.GenericViewSet):
         data = {'documents': documents}
         serializer = self.get_serializer(data)
         return Response(serializer.data)
-
