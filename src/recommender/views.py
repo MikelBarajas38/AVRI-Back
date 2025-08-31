@@ -138,3 +138,4 @@ class DocumentRecommendationViewSet(viewsets.GenericViewSet):
         data = {'documents': documents}
         serializer = self.get_serializer(data)
         return Response(serializer.data)
+    
