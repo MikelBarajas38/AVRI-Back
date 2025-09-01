@@ -9,15 +9,18 @@ html[data-theme="light"],
   --darkened-bg: #e0ecf7;
   --avri-color1: #0056a3;
   --avri-color2: #004684;
+  --avri-color3: #2a527a;
   --header-bg: var(--avri-color1);
   --breadcrumbs-bg: var(--avri-color2);
   --header-color: white;
   /* buttons*/
   --button-fg: white;
   --default-button-bg: var(--avri-color1);
-  --default-button-hover-bg: #2a527a;
-  --button-hover-bg: #2a527a;
+  --default-button-hover-bg: var(--avri-color3);
+  --button-hover-bg: var(--avri-color3);
   --button-bg: var(--avri-color1);
+  --user-tools-bg: white;
+  --user-tools-font: var(--avri-color1);
 
   /*font style*/
   --font-family-primary: "Inter", sans-serif;
@@ -32,6 +35,8 @@ html[data-theme="dark"] {
   --selected-row: #777777;
   --link-fg: white;
   --link-hover-color: #9cd1ff;
+  --user-tools-bg: var(--darkened-bg);
+  --user-tools-font: white;
 }
 
 /* prefers-color-scheme: dark */
@@ -41,6 +46,8 @@ html[data-theme="dark"] {
     --selected-row: #777777;
     --link-fg: white;
     --link-hover-color: #9cd1ff;
+    --user-tools-bg: var(--darkened-bg);
+    --user-tools-font: white;
   }
 }
 
@@ -82,7 +89,7 @@ html[data-theme="dark"] {
 #user-tools {
   width: 100vw;
   height: 3rem;
-  background-color: white;
+  background-color: var(--user-tools-bg);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -115,7 +122,7 @@ html[data-theme="dark"] {
 .custom-user-tools form,
 .theme-toggle-item {
   font-size: 1.2rem;
-  color: var(--avri-color1);
+  color: var(--user-tools-font);
   font-weight: bold;
   text-decoration: none;
   padding: 0 1.5rem;
@@ -158,8 +165,8 @@ html[data-theme="dark"] {
 .theme-toggle svg.theme-icon-when-auto,
 .theme-toggle svg.theme-icon-when-dark,
 .theme-toggle svg.theme-icon-when-light {
-  fill: var(--avri-color1);
-  color: white;
+  fill: var(--user-tools-font);
+  color: var(--user-tools-bg);
   transition: all 0.3s ease; /* Añadir transición suave */
 }
 
@@ -277,4 +284,3 @@ body.login .header-img {
 #content a[href="/admin/"]:hover {
   background-color: var(--button-hover-bg, #2a527a);
 }
-
