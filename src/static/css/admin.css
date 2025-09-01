@@ -118,16 +118,14 @@ html[data-theme="dark"] {
 #user-tools a:visited,
 #user-tools a:hover,
 #user-tools a:focus,
-#logout-form button,
-.custom-user-tools form,
-.theme-toggle-item {
+#logout-form button {
   font-size: 1.2rem;
   color: var(--user-tools-font);
   font-weight: bold;
   text-decoration: none;
   padding: 0 1.5rem;
   height: 100%;
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
@@ -146,11 +144,29 @@ html[data-theme="dark"] {
   color: white !important;
 }
 
+#logout-form button,
+#logout-form {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
 .custom-user-tools li a:active {
   background-color: rgb(54, 105, 156);
 }
 
 /* theme-icon*/
+.theme-toggle-item button {
+  height: 100%;
+  width: 100%;
+  padding: 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .theme-toggle-item button {
   height: 100%;
   width: 100%;
