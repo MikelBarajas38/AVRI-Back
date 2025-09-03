@@ -64,6 +64,15 @@ class CreateUserProfileView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = serializers.UserProfileSerializer
 
+    def create(self, request, *args, **kwargs):
+        # If the user already has a profile, don't try to insert again.
+        if UserProfile.objects.filter(user=request.user).exists():
+            return Response(
+                {'detail': 'Profile already exists.'},
+                status=status.HTTP_409_CONFLICT
+            )
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         """
         Save the user profile with the authenticated user.
@@ -81,12 +90,13 @@ class ManageUserProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         """
-        Retrieve and return the authenticated user's profile.
+        Retrieve (or create) the authenticated user's profile.
         """
-        try:
-            return UserProfile.objects.get(user=self.request.user)
-        except UserProfile.DoesNotExist:
-            return None
+        obj, _created = UserProfile.objects.get_or_create(
+            user=self.request.user,
+            defaults={'profile': {}}
+        )
+        return obj
 
 
 class DocumentRecommendationViewSet(viewsets.GenericViewSet):
@@ -125,10 +135,6 @@ class DocumentRecommendationViewSet(viewsets.GenericViewSet):
         recommended_ids = get_recommendations(user_profile, max_count)
 
         documents = Document.objects.filter(id__in=recommended_ids)
-
-        data = {
-            'documents': documents,
-        }
-
+        data = {'documents': documents}
         serializer = self.get_serializer(data)
         return Response(serializer.data)
