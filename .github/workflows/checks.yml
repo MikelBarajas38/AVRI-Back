@@ -21,5 +21,7 @@ jobs:
         run: docker compose run --rm app sh -c "python manage.py wait_for_db && python manage.py test"
       - name: Lint
         run: docker compose run --rm app sh -c "flake8"
+      - name: Coverage
+        run: docker compose run --rm app sh -c "coverage run --data-file=/app/cov/.coverage --source='.' manage.py test"
       - name: Coveralls GitHub Action
         uses: coverallsapp/github-action@v2.3.6
