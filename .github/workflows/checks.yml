@@ -25,3 +25,5 @@ jobs:
         run: docker compose run --rm app sh -c "coverage run --data-file=/tmp/.coverage --source='.' manage.py test"
       - name: Coveralls GitHub Action
         uses: coverallsapp/github-action@v2.3.6
+        with:
+          file: "/tmp/.coverage"
