@@ -1,7 +1,7 @@
 ---
 name: Checks
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   test-lint:
@@ -22,6 +22,6 @@ jobs:
       - name: Lint
         run: docker compose run --rm app sh -c "flake8"
       - name: Coverage
-        run: docker compose run --rm app sh -c "coverage run --data-file=/app/cov/.coverage --source='.' manage.py test"
+        run: docker compose run --rm app sh -c "mkdir -p /app/cov && coverage run --data-file=/app/cov/.coverage --source='.' manage.py test"
       - name: Coveralls GitHub Action
         uses: coverallsapp/github-action@v2.3.6
