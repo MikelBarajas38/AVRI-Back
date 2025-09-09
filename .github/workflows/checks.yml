@@ -21,8 +21,8 @@ jobs:
         run: |
           docker compose run --rm --user root app sh -c "
             su django -c 'python manage.py wait_for_db &&
-            coverage run --data-file=/tmp/.coverage --source='.' manage.py test' &&
-            coverage xml --data-file=/tmp/.coverage -o /tmp/coverage.xml' &&
+                          coverage run --data-file=/tmp/.coverage --source=. manage.py test &&
+                          coverage xml --data-file=/tmp/.coverage -o /tmp/coverage.xml' &&
             cp /tmp/coverage.xml /app/coverage.xml
           "
       - name: Lint
