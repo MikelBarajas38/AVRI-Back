@@ -32,4 +32,6 @@ RUN python -m venv /venv && \
 
 ENV PATH="/venv/bin:$PATH"
 
+RUN mkdir -p /tmp && chmod 1777 /tmp
+
 USER django
