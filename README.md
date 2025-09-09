@@ -9,7 +9,7 @@
 </div>
 
 
-# AVRI-Back 
+# AVRI-Back[![Coverage Status](https://coveralls.io/repos/github/MikelBarajas38/AVRI-Back/badge.svg)](https://coveralls.io/github/MikelBarajas38/AVRI-Back)
 
 ## 📋 Tabla de Contenidos
 

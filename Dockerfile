@@ -28,10 +28,10 @@ RUN python -m venv /venv && \
     adduser \
         --disabled-password \
         --no-create-home \
-        django && \
-    mkdir -p /app/cov && \
-    chown -R django:django /app/cov
+        django
 
 ENV PATH="/venv/bin:$PATH"
+
+RUN mkdir -p /tmp && chmod 1777 /tmp
 
 USER django
