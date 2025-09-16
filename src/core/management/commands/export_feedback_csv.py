@@ -5,12 +5,10 @@ import csv
 import json
 import sys
 from datetime import datetime, time
-from typing import Dict, Any, Iterable
+from typing import Dict, Any
 
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Q
 from django.utils import timezone
-from django.conf import settings
 
 from core.models import SatisfactionSurveyResponse
 
@@ -35,7 +33,8 @@ def _parse_date(date_str: str, is_end: bool = False):
     return dt
 
 
-def _flatten_json(d: Any, parent_key: str = "", sep: str = ".") -> Dict[str, Any]:
+def _flatten_json(d: Any, parent_key: str = "",
+                  sep: str = ".") -> Dict[str, Any]:
     """
     Flatten arbitrarily nested JSON into a single dict with dotted keys.
     Arrays are JSON-serialized to keep one column per question key.
@@ -55,19 +54,22 @@ def _flatten_json(d: Any, parent_key: str = "", sep: str = ".") -> Dict[str, Any
 class Command(BaseCommand):
     help = (
         "Export SatisfactionSurveyResponse data to CSV. "
-        "Optionally compute simple per-question value counts (a second CSV)."
+        "Optionally compute simple per-question value counts "
+        "(a second CSV)."
     )
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--from",
             dest="date_from",
-            help="Start datetime (inclusive). Accepts 'YYYY-MM-DD' or ISO 'YYYY-MM-DDTHH:MM[:SS]'.",
+            help="Start datetime (inclusive). Accepts 'YYYY-MM-DD' or "
+                 "ISO 'YYYY-MM-DDTHH:MM[:SS]'.",
         )
         parser.add_argument(
             "--to",
             dest="date_to",
-            help="End datetime (inclusive). Accepts 'YYYY-MM-DD' or ISO 'YYYY-MM-DDTHH:MM[:SS]'.",
+            help="End datetime (inclusive). Accepts 'YYYY-MM-DD' or "
+                 "ISO 'YYYY-MM-DDTHH:MM[:SS]'.",
         )
         parser.add_argument(
             "--survey-version",
@@ -94,13 +96,15 @@ class Command(BaseCommand):
         parser.add_argument(
             "--summary",
             action="store_true",
-            help="Also write per-question value counts to '<outfile>.summary.csv' (requires --outfile).",
+            help="Also write per-question value counts to "
+                 "'<outfile>.summary.csv' (requires --outfile).",
         )
         parser.add_argument(
             "--limit-keys",
             dest="limit_keys",
             nargs="*",
-            help="Optional list of survey keys to include (dotted notation). Others are ignored.",
+            help="Optional list of survey keys to include (dotted notation). "
+                 "Others are ignored.",
         )
 
     def handle(self, *args, **options):
@@ -114,7 +118,9 @@ class Command(BaseCommand):
         limit_keys = set(options.get("limit_keys") or [])
 
         if do_summary and not outfile:
-            raise CommandError("--summary requires --outfile so we can create a second CSV.")
+            raise CommandError(
+                "--summary requires --outfile so we can create a second CSV."
+            )
 
         qs = SatisfactionSurveyResponse.objects.all().select_related("user")
 
@@ -126,7 +132,11 @@ class Command(BaseCommand):
             qs = qs.filter(version=version)
 
         if not qs.exists():
-            self.stdout.write(self.style.WARNING("No survey responses match the given filters."))
+            self.stdout.write(
+                self.style.WARNING(
+                    "No survey responses match the given filters."
+                )
+            )
             return
 
         dynamic_keys = set()
@@ -145,12 +155,16 @@ class Command(BaseCommand):
                 "user_id": getattr(resp.user, "id", None),
                 "user_email": getattr(resp.user, "email", "") or "",
                 "version": resp.version,
-                "completed_at": timezone.localtime(resp.completed_at).isoformat(),
+                "completed_at": timezone.localtime(
+                    resp.completed_at
+                ).isoformat(),
                 **flat,
             }
             flattened_rows.append(row)
 
-        fixed_cols = ["response_id", "user_id", "user_email", "version", "completed_at"]
+        fixed_cols = [
+            "response_id", "user_id", "user_email", "version", "completed_at"
+        ]
         dynamic_cols = sorted(dynamic_keys)
         headers = fixed_cols + dynamic_cols
 
@@ -161,7 +175,10 @@ class Command(BaseCommand):
             out_stream = sys.stdout
             close_after = False
 
-        writer = csv.DictWriter(out_stream, fieldnames=headers, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
+        writer = csv.DictWriter(
+            out_stream, fieldnames=headers, delimiter=delimiter,
+            quoting=csv.QUOTE_MINIMAL
+        )
         writer.writeheader()
         for row in flattened_rows:
             for k in dynamic_cols:
@@ -171,10 +188,12 @@ class Command(BaseCommand):
         if close_after:
             out_stream.close()
 
-        self.stdout.write(self.style.SUCCESS(f"Exported {len(flattened_rows)} responses."))
+        self.stdout.write(
+            self.style.SUCCESS(f"Exported {len(flattened_rows)} responses.")
+        )
 
         if do_summary:
-            summary_counts = {}  
+            summary_counts = {}
             for row in flattened_rows:
                 for k in dynamic_cols:
                     val = row.get(k, "")
@@ -185,11 +204,19 @@ class Command(BaseCommand):
                     summary_counts[k][val] += 1
 
             summary_path = outfile + ".summary.csv"
-            with open(summary_path, "w", newline="", encoding=encoding) as sf:
-                s_writer = csv.writer(sf, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
+            with open(summary_path, "w", newline="",
+                      encoding=encoding) as sf:
+                s_writer = csv.writer(
+                    sf, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL
+                )
                 s_writer.writerow(["question_key", "answer_value", "count"])
                 for key in sorted(summary_counts.keys()):
-                    for value, count in sorted(summary_counts[key].items(), key=lambda x: (-x[1], x[0])):
+                    for value, count in sorted(
+                        summary_counts[key].items(),
+                        key=lambda x: (-x[1], x[0])
+                    ):
                         s_writer.writerow([key, value, count])
 
-            self.stdout.write(self.style.SUCCESS(f"Wrote summary counts - {summary_path}"))
+            self.stdout.write(
+                self.style.SUCCESS(f"Wrote summary counts - {summary_path}")
+            )
