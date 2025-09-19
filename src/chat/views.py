@@ -246,15 +246,6 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
                 question=question
             )
 
-            if (
-                response.get("code") == 0
-                and "data" in response
-                and "answer" in response["data"]
-            ):
-                response['data']['answer'] = remove_thinking_block(
-                    response['data']['answer']
-                )
-
             session.save(update_fields=['updated_at'])
 
             return Response(response)
