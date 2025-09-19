@@ -3,7 +3,7 @@ Views for the chat API.
 """
 
 import os
-
+import re
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
@@ -16,6 +16,19 @@ from core.services.ragflow_service import RAGFlowService
 from chat import serializers
 
 from chat.exceptions import RagflowException
+
+
+def remove_thinking_block(text: str) -> str:
+    """
+    Remove <think> blocks from DeepSeek R1 responses.
+    Handles both single-line and multi-line thinking blocks.
+    """
+    # Pattern to match <think>...</think> blocks
+    pattern = r'<think>.*?</think>'
+    cleaned_text = re.sub(pattern, '', text, flags=re.DOTALL | re.IGNORECASE)
+    cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
+
+    return cleaned_text
 
 
 def get_session_name_from_query(query: str) -> str:
@@ -55,13 +68,15 @@ def get_session_name_from_query(query: str) -> str:
                 )
             )
 
-        title = title_response['data']['answer']
+        raw_title = title_response['data']['answer']
 
         ragflow.delete_session(
             assistant_id=os.getenv('RAGFLOW_TITLER_ID'),
             session_ids=[session_id]
         )
 
+        # remove thinking blocks from reasoning models
+        title = remove_thinking_block(raw_title)
         title = ''.join(filter(lambda x: x.isalpha() or x.isspace(), title))
         title = title[:100]
         title = title.strip()
@@ -230,6 +245,15 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
                 session_id=session.session_id,
                 question=question
             )
+
+            if (
+                response.get("code") == 0
+                and "data" in response
+                and "answer" in response["data"]
+            ):
+                response['data']['answer'] = remove_thinking_block(
+                    response['data']['answer']
+                )
 
             session.save(update_fields=['updated_at'])
 
