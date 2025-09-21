@@ -25,8 +25,14 @@ def _parse_date(date_str: str, is_end: bool = False):
         dt = datetime.fromisoformat(date_str)
     except ValueError:
         dt = datetime.fromisoformat(date_str[:10])
+    
+    # If only date was provided (no time), set appropriate time
+    if 'T' not in date_str and len(date_str) == 10:  # YYYY-MM-DD format
         if is_end:
             dt = datetime.combine(dt.date(), time(23, 59, 59))
+        else:
+            dt = datetime.combine(dt.date(), time(0, 0, 0))
+    
     if timezone.is_naive(dt):
         tz = timezone.get_default_timezone()
         dt = timezone.make_aware(dt, tz)
@@ -110,7 +116,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         date_from = _parse_date(options.get("date_from"))
         date_to = _parse_date(options.get("date_to"), is_end=True)
-        version = options.get("version")
+        version = options.get("survey_version")
         outfile = options.get("outfile")
         delimiter = options.get("delimiter") or ","
         encoding = options.get("encoding") or "utf-8"
