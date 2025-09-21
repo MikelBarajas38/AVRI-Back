@@ -25,14 +25,14 @@ def _parse_date(date_str: str, is_end: bool = False):
         dt = datetime.fromisoformat(date_str)
     except ValueError:
         dt = datetime.fromisoformat(date_str[:10])
-    
+
     # If only date was provided (no time), set appropriate time
     if 'T' not in date_str and len(date_str) == 10:  # YYYY-MM-DD format
         if is_end:
             dt = datetime.combine(dt.date(), time(23, 59, 59))
         else:
             dt = datetime.combine(dt.date(), time(0, 0, 0))
-    
+
     if timezone.is_naive(dt):
         tz = timezone.get_default_timezone()
         dt = timezone.make_aware(dt, tz)
