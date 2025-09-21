@@ -137,8 +137,8 @@ class ExportFeedbackCSVTests(TestCase):
             temp_path = temp_file.name
 
         try:
-            call_command('export_feedback_csv', outfile=temp_path, 
-            summary=True)
+            call_command('export_feedback_csv', outfile=temp_path,
+                         summary=True)
 
             # Check main CSV file
             with open(temp_path, 'r', encoding='utf-8') as f:
@@ -291,5 +291,5 @@ class ExportFeedbackCSVTests(TestCase):
         mock_file.side_effect = IOError("Permission denied")
 
         with self.assertRaises(IOError):
-            call_command('export_feedback_csv', 
-            outfile='/invalid/path/file.csv')
+            call_command('export_feedback_csv',
+                         outfile='/invalid/path/file.csv')
