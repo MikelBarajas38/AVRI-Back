@@ -51,7 +51,6 @@ def get_recommendations(
                     break
 
     recommendations = list(set(recommendations))
-    print(f"Recommendations: {recommendations}")
 
     return recommendations
 
