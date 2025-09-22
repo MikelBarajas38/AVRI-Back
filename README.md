@@ -8,134 +8,121 @@
   </a>
 </div>
 
+# AVRI-Back [![Coverage Status](https://coveralls.io/repos/github/MikelBarajas38/AVRI-Back/badge.svg?kill_cache=1)](https://coveralls.io/github/MikelBarajas38/AVRI-Back)
 
-# AVRI-Back[![Coverage Status](https://coveralls.io/repos/github/MikelBarajas38/AVRI-Back/badge.svg)](https://coveralls.io/github/MikelBarajas38/AVRI-Back)
 
-## 📋 Tabla de Contenidos
-
-- [Pre-requisitos](#pre-requisitos)
-- [Instalación](#instalación)
-- [Configuración de RAGFLOW](#configuración-de-ragflow)
-- [Ejecución del Proyecto](#ejecución-del-proyecto)
-- [Verificación](#verificación)
-- [Detener Servicios](#detener-servicios)
+## 📋 Table of Contents
+- [Intro](#AVRI)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [RAGFLOW Configuration](#ragflow-configuration)
+- [Project Execution](#project-execution)
+- [Verification](#verification)
+- [Stop Services](#stop-services)
 
 ---
 
-## 🔧 Pre-requisitos
+## 🤖 AVRI
 
-Antes de comenzar, asegúrate de tener instalado:
+AVRI-Back is the backend system that powers AVRI (Asistente Virtual del Repositorio Institucional), an AI-powered virtual assistant designed to help users navigate and interact with institutional repositories that uses RAGFLOW for document processing and retrieval-augmented generation capabilities.
 
+---
+
+## 🔧 Prerequisites
+Before starting, make sure you have installed:
 - [Git](https://git-scm.com/)
-- [Docker](https://www.docker.com/) y Docker Compose
-- [RAGFLOW](https://ragflow.io/) (configurado previamente)
+- [Docker](https://www.docker.com/) and Docker Compose
+- [RAGFLOW](https://ragflow.io/) (previously configured)
 
 ---
 
-## 🚀 Instalación
+## 🚀 Installation
 
-### 1. Clonar el repositorio
-
+### 1. Clone the repository
 ```bash
 git clone https://github.com/MikelBarajas38/AVRI-Back.git
 ```
 
-### 2. Navegar al directorio del proyecto
-
+### 2. Navigate to the project directory
 ```bash
 cd AVRI-Back
 ```
 
 ---
 
-## ⚙️ Configuración de RAGFLOW
+## ⚙️ RAGFLOW Configuration
+> **⚠️ Important**: RAGFLOW must be running before starting AVRI-Back.
 
-> **⚠️ Importante**: RAGFLOW debe estar ejecutándose antes de iniciar AVRI-Back.
-
-### 1. Inicializar RAGFLOW
-
-Navega a la carpeta donde tienes RAGFLOW instalado y ejecuta:
-
+### 1. Initialize RAGFLOW
+Navigate to the folder where you have RAGFLOW installed and run:
 ```bash
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-### 2. Verificar logs de RAGFLOW
-
+### 2. Check RAGFLOW logs
 ```bash
 docker logs -f ragflow-server
 ```
 
-### 3. Confirmación exitosa
-
-Si todo se ejecutó correctamente, deberías ver:
-- El logo "RAGFLOW" en arte ASCII
-- El mensaje "TASK EXECUTOR"
+### 3. Successful confirmation
+If everything executed correctly, you should see:
+- The "RAGFLOW" logo in ASCII art
+- The "TASK EXECUTOR" message
 
 ![RAGFLOW Success](https://github.com/user-attachments/assets/284a1b31-379a-4779-853d-7cedecfde258)
 
 ---
 
-## 🏃‍♂️ Ejecución del Proyecto
-
-Una vez que RAGFLOW esté ejecutándose, inicia AVRI-Back:
-
+## 🏃‍♂️ Project Execution
+Once RAGFLOW is running, start AVRI-Back:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.ragflow.yml up
 ```
 
-Este comando inicializará todos los contenedores necesarios.
+This command will initialize all necessary containers.
 
 ---
 
-## ✅ Verificación
+## ✅ Verification
 
-### Logs exitosos
-
-Si la ejecución es correcta, deberías ver logs similares a estos:
-
+### Successful logs
+If the execution is correct, you should see logs similar to these:
 ![Success Logs](https://github.com/user-attachments/assets/93ffcfc4-c321-4117-8f88-5e010f870925)
 
-### Estados de los servicios
-
-Puedes verificar el estado de los contenedores con:
-
+### Service status
+You can verify the container status with:
 ```bash
 docker ps
 ```
 
 ---
 
-## 🛑 Detener Servicios
+## 🛑 Stop Services
 
-### Método 1: Interrupción manual
-1. Presiona `Ctrl + C` en la terminal donde están ejecutándose los contenedores
-2. Ejecuta el siguiente comando para asegurar que todos los servicios se detengan:
-
+### Method 1: Manual interruption
+1. Press `Ctrl + C` in the terminal where the containers are running
+2. Execute the following command to ensure all services stop:
 ```bash
 docker compose down
 ```
 
-### Método 2: Comando directo
+### Method 2: Direct command
 ```bash
 docker compose down
 ```
 
 ---
 
-## 📝 Notas Adicionales
-
-- Asegúrate de que Docker esté ejecutándose antes de iniciar cualquier servicio
-- Los puertos utilizados deben estar disponibles en tu sistema
-- Para más información sobre RAGFLOW, consulta su [documentación oficial](https://ragflow.io/docs)
+## 📝 Additional Notes
+- Make sure Docker is running before starting any service
+- The ports used must be available on your system
+- For more information about RAGFLOW, consult their [official documentation](https://ragflow.io/docs)
 
 ---
 
-## 🤝 Contribución
-
-Si encuentras algún problema o tienes sugerencias de mejora, por favor:
-
-1. Abre un [issue](https://github.com/MikelBarajas38/AVRI-Back/issues)
-2. Crea un pull request con tus cambios
+## 🤝 Contribution
+If you encounter any problems or have improvement suggestions, please:
+1. Open an [issue](https://github.com/MikelBarajas38/AVRI-Back/issues)
+2. Create a pull request with your changes
 
 ---
