@@ -13,12 +13,12 @@
 
 ## 📋 Table of Contents
 - [Intro](#AVRI)
-- [Prerequisites](#prerequisites)
+- [Prerequisites](#🔧Prerequisites)
 - [Installation](#installation)
 - [RAGFLOW Configuration](#ragflow-configuration)
-- [Project Execution](#project-execution)
+- [Running AVRI](#project-execution)
 - [Verification](#verification)
-- [Stop Services](#stop-services)
+- [Stopping AVRI](#stop-services)
 
 ---
 
@@ -73,7 +73,7 @@ If everything executed correctly, you should see:
 
 ---
 
-## 🏃‍♂️ Project Execution
+## 🏃‍♂️ Running AVRI
 Once RAGFLOW is running, start AVRI-Back:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.ragflow.yml up
@@ -97,7 +97,7 @@ docker ps
 
 ---
 
-## 🛑 Stop Services
+## 🛑 Stopping AVRI
 
 ### Method 1: Manual interruption
 1. Press `Ctrl + C` in the terminal where the containers are running
