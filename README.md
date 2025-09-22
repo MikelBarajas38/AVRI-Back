@@ -12,13 +12,13 @@
 
 
 ## 📋 Table of Contents
-- [Intro](#AVRI)
-- [Prerequisites](#🔧Prerequisites)
-- [Installation](#installation)
-- [RAGFLOW Configuration](#ragflow-configuration)
-- [Running AVRI](#project-execution)
-- [Verification](#verification)
-- [Stopping AVRI](#stop-services)
+- [Intro](#-avri)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [RAGFLOW Configuration](#️-ragflow-configuration)
+- [Running AVRI](#️-running-avri)
+- [Verification](#-verification)
+- [Stopping AVRI](#-stopping-avri)
 
 ---
 
