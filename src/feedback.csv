@@ -1,0 +1,10 @@
+response_id,user_id,user_email,version,completed_at,comments,meta.feature,meta.locale,meta.session_id,meta.user_type,rating_items.q1,rating_items.q10,rating_items.q2,rating_items.q3,rating_items.q4,rating_items.q5,rating_items.q6,rating_items.q7,rating_items.q8,rating_items.q9
+1,8,santiV3@mail.com,sus-1.0,2025-08-21T05:05:05.542641+00:00,,chat,es-419,,unknown,2,3,5,5,3,2,4,3,4,3
+2,8,santiV3@mail.com,sus-1.0,2025-08-21T18:03:29.469114+00:00,Hola estos son comentarios anexos,chat,es-419,,unknown,4,4,3,4,3,3,3,5,4,4
+3,8,santiV3@mail.com,sus-1.0,2025-08-21T18:52:27.691207+00:00,,chat,es-419,,unknown,4,4,3,2,3,4,2,5,3,2
+4,8,santiV3@mail.com,sus-1.0,2025-08-22T20:25:35.939231+00:00,No,chat,es-419,,unknown,4,4,3,2,3,4,2,4,3,4
+5,8,santiV3@mail.com,sus-1.0,2025-08-28T17:05:09.063293+00:00,,chat,es-419,0934ba7e843111f0b675ca8a64620bf8,unknown,2,4,3,4,4,4,4,3,4,3
+6,8,santiV3@mail.com,sus-1.0,2025-08-28T23:30:07.692905+00:00,,chat,es-419,32024b32845511f08751a21c785247b2,unknown,4,4,3,4,4,4,4,4,5,4
+7,8,santiV3@mail.com,sus-1.0,2025-09-14T20:22:37.598894+00:00,z,general,es-419,,unknown,5,5,4,3,5,4,4,3,4,4
+8,8,santiV3@mail.com,sus-1.0,2025-09-15T21:47:53.702412+00:00,"ñ
+",general,es-419,,unknown,3,4,4,3,4,3,2,4,4,2
