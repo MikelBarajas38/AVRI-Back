@@ -97,6 +97,19 @@ docker ps
 
 ---
 
+### Test
+The test actually cover (but are not limited) for the next functions:
+- Management Commands
+- APi Endpoints
+- Core Models & Data
+- Authentication & User Management
+
+For the verification of the test and the execution of them you can use the nxt command:
+```bash
+docker compose run --rm app sh -c "coverage run --source='.' manage.py test && coverage report"
+```
+---
+
 ## 🛑 Stopping AVRI
 
 ### Method 1: Manual interruption
