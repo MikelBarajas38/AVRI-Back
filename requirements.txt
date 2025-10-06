@@ -4,3 +4,4 @@ requests>=2.32.3,<2.33
 psycopg[c]>=3.2.6,<3.3
 drf-spectacular>=0.28.0,<0.29
 django-cors-headers>=4.7.0,<4.8
+git+https://github.com/juanQNav/Ingest-ragflow.git@main#egg=ingest-ragflow
