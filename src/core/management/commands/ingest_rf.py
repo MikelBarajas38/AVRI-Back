@@ -27,7 +27,7 @@ class Command(BaseCommand):
             type=int,
             help="Total number of retrieve items",
         )
-        parser.add_arguments(
+        parser.add_argument(
             "folder_path",
             required=False,
             default="ingest_tmp",
