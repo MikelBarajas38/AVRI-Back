@@ -28,7 +28,7 @@ class Command(BaseCommand):
             help="Total number of retrieve items",
         )
         parser.add_argument(
-            "folder_path",
+            "--folder_path",
             required=False,
             default="ingest_tmp",
             type=str,
@@ -37,7 +37,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--max_tasks",
             required=False,
-            default=4,
+            default=3,
             type=int,
             help="Maximum number of concurrent",
         )
@@ -56,7 +56,7 @@ class Command(BaseCommand):
             RI_BASE_URL = os.getenv("RI_BASE_URL")
             RI_BASE_URL_REST = os.getenv("RI_BASE_URL_REST")
             API_KEY = os.getenv("RAGFLOW_API_KEY")
-            RAGFLOW_URL = os.getenv("RAGFLOW_BASE_URL")
+            RAGFLOW_BASE_URL = os.getenv("RAGFLOW_BASE_URL")
             DATASET_ID = os.getenv("DATASET_ID")
             # Set up parameters
             LIMIT_ITEMS = options["li"]
@@ -71,14 +71,15 @@ class Command(BaseCommand):
                 raise CommandError("RI_BASE_URL_REST not found in settings")
             if not API_KEY:
                 raise CommandError("RAGFLOW_API_KEY not found in settings")
-            if not RAGFLOW_URL:
+            if not RAGFLOW_BASE_URL:
                 raise CommandError("RAGFLOW_BASE_URL not found in settings")
             if not DATASET_ID:
                 raise CommandError("DATASET_ID not found in settings")
 
             # Remove '/api/v1'
-            if RAGFLOW_URL and RAGFLOW_URL.endswith("/api/v1"):
-                RAGFLOW_URL = RAGFLOW_URL[:-7]
+            if RAGFLOW_BASE_URL and RAGFLOW_BASE_URL.endswith("/api/v1"):
+                RAGFLOW_BASE_URL = RAGFLOW_BASE_URL[:-7]
+                self.stdout.write(f"RAGFlow URL: {RAGFLOW_BASE_URL}")
 
             # Create output directory if it does not exist
             os.makedirs(FOLDER_PATH, exist_ok=True)
@@ -87,7 +88,9 @@ class Command(BaseCommand):
             # Initialize RAGFlow
             self.stdout.write("Initializing RAGFlow connection...")
             try:
-                rag_object = RAGFlow(api_key=API_KEY, base_url=RAGFLOW_URL)
+                rag_object = RAGFlow(
+                    api_key=API_KEY, base_url=RAGFLOW_BASE_URL
+                )
             except Exception as e:
                 raise CommandError(f"Failed to initialize RAGFlow: {e}")
 
@@ -95,9 +98,10 @@ class Command(BaseCommand):
             dataset_rf = self._get_dataset(rag_object, DATASET_ID)
 
             document_ids = []
+            metadata_map = {}
 
             if dataset_rf:
-                process_items_in_parallel(
+                metadata_map = process_items_in_parallel(
                     base_url=RI_BASE_URL,
                     base_url_rest=RI_BASE_URL_REST,
                     folder_path=FOLDER_PATH,
@@ -118,6 +122,9 @@ class Command(BaseCommand):
                     poll_interval=POLL_INTERVAL,
                 )
             )
+
+            # populate metadata in Document table
+            self.create_documents(metadata_map)
 
             # Final document status
             self._display_final_summary(dataset=dataset_rf)
@@ -141,6 +148,78 @@ class Command(BaseCommand):
                 f"Cloud not use dataset ID: \
                 {dataset_id}: {e}"
             )
+
+    def create_documents(self, metadata_map: dict) -> None:
+        """
+        Create Document records in database.
+        """
+        try:
+            from core.models import Document
+
+            created_count = 0
+            update_count = 0
+            error_count = 0
+
+            RI_BASE_URL = os.getenv("RI_BASE_URL")
+
+            for ragflow_id, item_metadata in metadata_map.items():
+                try:
+                    title = item_metadata.get("name", "Unknown Title")
+                    repository_id = item_metadata.get("uuid", "")
+                    handle = item_metadata.get("handle", "")
+
+                    if handle:
+                        repository_uri = (
+                            f"{RI_BASE_URL}/handle/{handle}" if handle else ""
+                        )
+                    else:
+                        repository_uri = ""
+
+                    in_archive = item_metadata.get("inArchive", False)
+                    discoverable = item_metadata.get("discoverable", False)
+                    withdrawn = item_metadata.get("withdrawn", False)
+
+                    if withdrawn:
+                        status = "withdrawn"
+                    elif in_archive and discoverable:
+                        status = "published"
+                    else:
+                        status = "unpublished"
+
+                    _, created = Document.objects.update_or_create(
+                        repository_id=repository_id,
+                        defaults={
+                            "id": ragflow_id,
+                            "title": title,
+                            "repository_uri": repository_uri,
+                            "status": status,
+                        },
+                    )
+
+                    if created:
+                        created_count += 1
+                        self.stdout.write(f"Created document: {title}")
+                    else:
+                        update_count += 1
+                        self.stdout.write(f"Updated document: {title}")
+                except Exception as e:
+                    error_count += 1
+                    self.stderr.write(
+                        f"Error processing document {ragflow_id}: {e}"
+                    )
+
+            self.stdout.write(
+                f"Successfully processed {len(metadata_map)} documents: "
+                f"{created_count} created, {update_count} updated,\
+                {error_count} errors"
+            )
+        except ImportError:
+            self.stderr.write(
+                "Error: Could not import Document model from core.models"
+            )
+        except Exception as e:
+            self.stderr.write(f"Error creating Django documents: {e}")
+            raise
 
     def _display_final_summary(self, dataset: DataSet) -> None:
         """
