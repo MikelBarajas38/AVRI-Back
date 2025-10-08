@@ -126,6 +126,15 @@ class Command(BaseCommand):
             # populate metadata in Document table
             self.create_documents(metadata_map)
 
+            # get list of processed files (status DONE)
+            processed_file_names = self._get_files_processed(dataset_rf)
+
+            # remove files
+            self._remove_temp_pdf(
+                folder_path=FOLDER_PATH,
+                processed_file_names=processed_file_names,
+            )
+
             # Final document status
             self._display_final_summary(dataset=dataset_rf)
 
@@ -220,6 +229,39 @@ class Command(BaseCommand):
         except Exception as e:
             self.stderr.write(f"Error creating Django documents: {e}")
             raise
+
+    def _get_files_processed(self, dataset: DataSet) -> list[str]:
+        """
+        Return a list of file name from the Ragflow Dataset whose
+        status is DONE.
+        """
+        try:
+            documents = dataset.list_documents()
+        except Exception as e:
+            self.stderr.write(f"Could not retrieve document list: {e}")
+            return []
+
+        return [
+            doc.name
+            for doc in documents
+            if getattr(doc, "run", None) == "DONE"
+        ]
+
+    def _remove_temp_pdf(
+        self, folder_path: str, processed_file_names: list[str]
+    ) -> None:
+        """
+        Remove temporal pdf files after the parser has processed it.
+        """
+        if os.path.isdir(folder_path):
+            for file in processed_file_names:
+                file_path_complete = os.path.join(folder_path, file)
+                os.remove(file_path_complete)
+                self.stdout.write(
+                    f"File {file_path_complete} has been removed."
+                )
+        else:
+            raise CommandError(f"folder_path: {folder_path} not found.")
 
     def _display_final_summary(self, dataset: DataSet) -> None:
         """
