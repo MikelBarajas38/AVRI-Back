@@ -179,7 +179,9 @@ class Command(BaseCommand):
 
                     if handle:
                         repository_uri = (
-                            f"{RI_BASE_URL}/handle/{handle}" if handle else ""
+                            f"{RI_BASE_URL}/xmlui/handle/{handle}"
+                            if handle
+                            else ""
                         )
                     else:
                         repository_uri = ""
