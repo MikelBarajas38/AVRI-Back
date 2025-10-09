@@ -25,6 +25,8 @@ services:
       - DB_PASS=devpass
     depends_on:
       - db
+      - statsd
+      - grafana
     networks:
       - default
 
