@@ -97,8 +97,17 @@ class Command(BaseCommand):
             # Get Dataset
             dataset_rf = self._get_dataset(rag_object, DATASET_ID)
 
+            # Get existing repository UUIDs from database
+            existing_repository_uuids = self._get_existing_repository_uuids()
+            self.stdout.write(
+                f"Found {len(existing_repository_uuids)} existing documents"
+                " in database"
+            )
+
             document_ids = []
             metadata_map = {}
+
+            self.stdout.write(f"Limit items: {LIMIT_ITEMS}")
 
             if dataset_rf:
                 metadata_map = process_items_in_parallel(
@@ -109,9 +118,17 @@ class Command(BaseCommand):
                     document_ids=document_ids,
                     max_concurrent_tasks=MAX_CONCURRENT_TASKS,
                     limit_items=LIMIT_ITEMS,
+                    exclude_uuids=existing_repository_uuids,
                 )
             else:
                 raise CommandError(f"Dataset {DATASET_ID} is NONE")
+
+            if not document_ids:
+                self.stdout.write(
+                    "No new documents to ingest. All items are already"
+                    " in the database."
+                )
+                return
 
             # Monitoring after dowloading
             tqdm.write("Starting document parsing monitoring...")
@@ -123,8 +140,28 @@ class Command(BaseCommand):
                 )
             )
 
+            # Filter metadata_map to only include documents with DONE status
+            metadata_map_done = self._filter_done_documents(
+                dataset_rf, metadata_map
+            )
+            self.stdout.write(
+                f"Documents with DONE status: {len(metadata_map_done)} out\
+                 of {len(metadata_map)}"
+            )
+
             # populate metadata in Document table
-            self.create_documents(metadata_map)
+            self._create_documents(metadata_map_done)
+
+            # get list of processed files (status DONE)
+            processed_file_names = self._get_files_from_metadata(
+                metadata_map_done
+            )
+
+            # remove files
+            self._remove_temp_pdf(
+                folder_path=FOLDER_PATH,
+                processed_file_names=processed_file_names,
+            )
 
             # Final document status
             self._display_final_summary(dataset=dataset_rf)
@@ -149,7 +186,53 @@ class Command(BaseCommand):
                 {dataset_id}: {e}"
             )
 
-    def create_documents(self, metadata_map: dict) -> None:
+    def _get_existing_repository_uuids(self) -> set[str]:
+        """
+        Get all existing repository IDs (UUIDs) from the Document table.
+        """
+        try:
+            from core.models import Document
+
+            existing_uuids = set(
+                Document.objects.values_list("repository_id", flat=True)
+            )
+            return existing_uuids
+        except ImportError:
+            self.stderr.write(
+                "Error: Could not import Document model from core.models"
+            )
+            return set()
+        except Exception as e:
+            self.stderr.write(f"Error retrieving existing repository IDs: {e}")
+            return set()
+
+    def _filter_done_documents(
+        self, dataset: DataSet, metadata_map: dict
+    ) -> dict:
+        """
+        Filter metadata_map to only include documents
+        with DONE status in RAGFlow.
+        """
+        try:
+            documents = dataset.list_documents()
+            done_document_ids = {
+                doc.id
+                for doc in documents
+                if getattr(doc, "run", None) == "DONE"
+            }
+
+            filtered_map = {
+                ragflow_id: metadata
+                for ragflow_id, metadata in metadata_map.items()
+                if ragflow_id in done_document_ids
+            }
+
+            return filtered_map
+        except Exception as e:
+            self.stderr.write(f"Error filtering DONE documents: {e}")
+            return metadata_map
+
+    def _create_documents(self, metadata_map: dict) -> None:
         """
         Create Document records in database.
         """
@@ -170,7 +253,9 @@ class Command(BaseCommand):
 
                     if handle:
                         repository_uri = (
-                            f"{RI_BASE_URL}/handle/{handle}" if handle else ""
+                            f"{RI_BASE_URL}/xmlui/handle/{handle}"
+                            if handle
+                            else ""
                         )
                     else:
                         repository_uri = ""
@@ -210,8 +295,8 @@ class Command(BaseCommand):
 
             self.stdout.write(
                 f"Successfully processed {len(metadata_map)} documents: "
-                f"{created_count} created, {update_count} updated,\
-                {error_count} errors"
+                f"{created_count} created, {update_count} updated,"
+                "{error_count} errors"
             )
         except ImportError:
             self.stderr.write(
@@ -220,6 +305,50 @@ class Command(BaseCommand):
         except Exception as e:
             self.stderr.write(f"Error creating Django documents: {e}")
             raise
+
+    def _get_files_from_metadata(self, metadata_map_done: dict) -> list[str]:
+        """
+        Extract file names from the metadata map of documents
+        processed in this execution.
+        """
+        file_names = []
+        for item_metadata in metadata_map_done.values():
+            # Get bitstreams from metadata
+            bitstreams = item_metadata.get("bitstreams", [])
+            if bitstreams:
+                # Get the first bitstream's name (the PDF)
+                file_name = bitstreams[0].get("name")
+                if file_name:
+                    file_names.append(file_name)
+
+        return file_names
+
+    def _remove_temp_pdf(
+        self, folder_path: str, processed_file_names: list[str]
+    ) -> None:
+        """
+        Remove temporal pdf files after the parser has processed it.
+        """
+        if os.path.isdir(folder_path):
+            for file in processed_file_names:
+                file_path_complete = os.path.join(folder_path, file)
+                if os.path.exists(file_path_complete):
+                    try:
+                        os.remove(file_path_complete)
+                        self.stdout.write(
+                            f"File {file_path_complete} has been removed."
+                        )
+                    except Exception as e:
+                        self.stderr.write(
+                            f"Error removing file {file_path_complete}: {e}"
+                        )
+                else:
+                    self.stdout.write(
+                        f"File {file_path_complete} does not exists"
+                        "(likely from previous execution), skipping..."
+                    )
+        else:
+            raise CommandError(f"folder_path: {folder_path} not found.")
 
     def _display_final_summary(self, dataset: DataSet) -> None:
         """
