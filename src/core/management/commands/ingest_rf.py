@@ -308,7 +308,8 @@ class Command(BaseCommand):
 
     def _get_files_from_metadata(self, metadata_map_done: dict) -> list[str]:
         """
-        Extract file names from the metadata map of documents processed in this execution.
+        Extract file names from the metadata map of documents
+        processed in this execution.
         """
         file_names = []
         for item_metadata in metadata_map_done.values():
