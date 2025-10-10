@@ -4,4 +4,7 @@ env/
 
 .env
 
-.coveragesrc/ingest_tmp/*.pdf
+.coverage
+
+# Ignore temporal pdf
+src/ingest_tmp/*.pdf
