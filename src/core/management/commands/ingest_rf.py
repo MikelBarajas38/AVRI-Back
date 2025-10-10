@@ -141,7 +141,7 @@ class Command(BaseCommand):
             )
 
             # Filter metadata_map to only include documents with DONE status
-            metadata_map_done = self.filter_done_documents(
+            metadata_map_done = self._filter_done_documents(
                 dataset_rf, metadata_map
             )
             self.stdout.write(
@@ -150,7 +150,7 @@ class Command(BaseCommand):
             )
 
             # populate metadata in Document table
-            self.create_documents(metadata_map_done)
+            self._create_documents(metadata_map_done)
 
             # get list of processed files (status DONE)
             processed_file_names = self._get_files_from_metadata(
@@ -206,7 +206,7 @@ class Command(BaseCommand):
             self.stderr.write(f"Error retrieving existing repository IDs: {e}")
             return set()
 
-    def filter_done_documents(
+    def _filter_done_documents(
         self, dataset: DataSet, metadata_map: dict
     ) -> dict:
         """
@@ -232,7 +232,7 @@ class Command(BaseCommand):
             self.stderr.write(f"Error filtering DONE documents: {e}")
             return metadata_map
 
-    def create_documents(self, metadata_map: dict) -> None:
+    def _create_documents(self, metadata_map: dict) -> None:
         """
         Create Document records in database.
         """
