@@ -232,6 +232,38 @@ class Command(BaseCommand):
             self.stderr.write(f"Error filtering DONE documents: {e}")
             return metadata_map
 
+    def _determine_document_status(self, item_metadata: dict) -> str:
+        """
+        Determine document status based on metadata.
+        """
+        metadata = item_metadata.get("metadata", {})
+
+        dc_rights = metadata.get("dc.rights", "").lower()
+
+        if dc_rights:
+            if (
+                "abierto" in dc_rights
+                or "open" in dc_rights
+                or "libre" in dc_rights
+            ):
+                return "L"
+            elif "restringido" in dc_rights or "restricted" in dc_rights:
+                return "R"
+            elif "embargo" in dc_rights or "embargoed" in dc_rights:
+                return "E"
+
+        in_archive = item_metadata.get("inArchive", False)
+        discoverable = item_metadata.get("discoverable", False)
+        withdrawn = item_metadata.get("withdrawn", False)
+
+        if withdrawn:
+            return "R"
+
+        if in_archive and discoverable:
+            return "L"
+
+        return "R"
+
     def _create_documents(self, metadata_map: dict) -> None:
         """
         Create Document records in database.
@@ -260,16 +292,9 @@ class Command(BaseCommand):
                     else:
                         repository_uri = ""
 
-                    in_archive = item_metadata.get("inArchive", False)
-                    discoverable = item_metadata.get("discoverable", False)
-                    withdrawn = item_metadata.get("withdrawn", False)
-
-                    if withdrawn:
-                        status = "withdrawn"
-                    elif in_archive and discoverable:
-                        status = "published"
-                    else:
-                        status = "unpublished"
+                    status = self._determine_document_status(
+                        item_metadata=item_metadata
+                    )
 
                     _, created = Document.objects.update_or_create(
                         repository_id=repository_id,
@@ -296,7 +321,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 f"Successfully processed {len(metadata_map)} documents: "
                 f"{created_count} created, {update_count} updated,"
-                "{error_count} errors"
+                f"{error_count} errors"
             )
         except ImportError:
             self.stderr.write(
