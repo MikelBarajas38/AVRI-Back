@@ -100,12 +100,14 @@ class Command(BaseCommand):
             # Get existing repository UUIDs from database
             existing_repository_uuids = self._get_existing_repository_uuids()
             self.stdout.write(
-                f"Found {len(existing_repository_uuids)} existing documents\
-                in database"
+                f"Found {len(existing_repository_uuids)} existing documents"
+                " in database"
             )
 
             document_ids = []
             metadata_map = {}
+
+            self.stdout.write(f"Limit items: {LIMIT_ITEMS}")
 
             if dataset_rf:
                 metadata_map = process_items_in_parallel(
@@ -123,8 +125,8 @@ class Command(BaseCommand):
 
             if not document_ids:
                 self.stdout.write(
-                    "No new documents to ingest. All items are already\
-                     in the database."
+                    "No new documents to ingest. All items are already"
+                    " in the database."
                 )
                 return
 
@@ -151,7 +153,9 @@ class Command(BaseCommand):
             self.create_documents(metadata_map_done)
 
             # get list of processed files (status DONE)
-            processed_file_names = self._get_files_processed(dataset_rf)
+            processed_file_names = self._get_files_from_metadata(
+                metadata_map_done
+            )
 
             # remove files
             self._remove_temp_pdf(
@@ -291,8 +295,8 @@ class Command(BaseCommand):
 
             self.stdout.write(
                 f"Successfully processed {len(metadata_map)} documents: "
-                f"{created_count} created, {update_count} updated,\
-                {error_count} errors"
+                f"{created_count} created, {update_count} updated,"
+                "{error_count} errors"
             )
         except ImportError:
             self.stderr.write(
@@ -302,22 +306,21 @@ class Command(BaseCommand):
             self.stderr.write(f"Error creating Django documents: {e}")
             raise
 
-    def _get_files_processed(self, dataset: DataSet) -> list[str]:
+    def _get_files_from_metadata(self, metadata_map_done: dict) -> list[str]:
         """
-        Return a list of file name from the Ragflow Dataset whose
-        status is DONE.
+        Extract file names from the metadata map of documents processed in this execution.
         """
-        try:
-            documents = dataset.list_documents()
-        except Exception as e:
-            self.stderr.write(f"Could not retrieve document list: {e}")
-            return []
+        file_names = []
+        for item_metadata in metadata_map_done.values():
+            # Get bitstreams from metadata
+            bitstreams = item_metadata.get("bitstreams", [])
+            if bitstreams:
+                # Get the first bitstream's name (the PDF)
+                file_name = bitstreams[0].get("name")
+                if file_name:
+                    file_names.append(file_name)
 
-        return [
-            doc.name
-            for doc in documents
-            if getattr(doc, "run", None) == "DONE"
-        ]
+        return file_names
 
     def _remove_temp_pdf(
         self, folder_path: str, processed_file_names: list[str]
@@ -328,10 +331,21 @@ class Command(BaseCommand):
         if os.path.isdir(folder_path):
             for file in processed_file_names:
                 file_path_complete = os.path.join(folder_path, file)
-                os.remove(file_path_complete)
-                self.stdout.write(
-                    f"File {file_path_complete} has been removed."
-                )
+                if os.path.exists(file_path_complete):
+                    try:
+                        os.remove(file_path_complete)
+                        self.stdout.write(
+                            f"File {file_path_complete} has been removed."
+                        )
+                    except Exception as e:
+                        self.stderr.write(
+                            f"Error removing file {file_path_complete}: {e}"
+                        )
+                else:
+                    self.stdout.write(
+                        f"File {file_path_complete} does not exists"
+                        "(likely from previous execution), skipping..."
+                    )
         else:
             raise CommandError(f"folder_path: {folder_path} not found.")
 
