@@ -4,4 +4,4 @@ env/
 
 .env
 
-.coverage
+.coveragesrc/ingest_tmp/*.pdf
