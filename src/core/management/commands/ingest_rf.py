@@ -97,6 +97,13 @@ class Command(BaseCommand):
             # Get Dataset
             dataset_rf = self._get_dataset(rag_object, DATASET_ID)
 
+            # Get existing repository UUIDs from database
+            existing_repository_uuids = self._get_existing_repository_uuids()
+            self.stdout.write(
+                f"Found {len(existing_repository_uuids)} existing documents\
+                in database"
+            )
+
             document_ids = []
             metadata_map = {}
 
@@ -109,9 +116,17 @@ class Command(BaseCommand):
                     document_ids=document_ids,
                     max_concurrent_tasks=MAX_CONCURRENT_TASKS,
                     limit_items=LIMIT_ITEMS,
+                    exclude_uuids=existing_repository_uuids,
                 )
             else:
                 raise CommandError(f"Dataset {DATASET_ID} is NONE")
+
+            if not document_ids:
+                self.stdout.write(
+                    "No new documents to ingest. All items are already\
+                     in the database."
+                )
+                return
 
             # Monitoring after dowloading
             tqdm.write("Starting document parsing monitoring...")
@@ -123,8 +138,17 @@ class Command(BaseCommand):
                 )
             )
 
+            # Filter metadata_map to only include documents with DONE status
+            metadata_map_done = self.filter_done_documents(
+                dataset_rf, metadata_map
+            )
+            self.stdout.write(
+                f"Documents with DONE status: {len(metadata_map_done)} out\
+                 of {len(metadata_map)}"
+            )
+
             # populate metadata in Document table
-            self.create_documents(metadata_map)
+            self.create_documents(metadata_map_done)
 
             # get list of processed files (status DONE)
             processed_file_names = self._get_files_processed(dataset_rf)
@@ -157,6 +181,52 @@ class Command(BaseCommand):
                 f"Cloud not use dataset ID: \
                 {dataset_id}: {e}"
             )
+
+    def _get_existing_repository_uuids(self) -> set[str]:
+        """
+        Get all existing repository IDs (UUIDs) from the Document table.
+        """
+        try:
+            from core.models import Document
+
+            existing_uuids = set(
+                Document.objects.values_list("repository_id", flat=True)
+            )
+            return existing_uuids
+        except ImportError:
+            self.stderr.write(
+                "Error: Could not import Document model from core.models"
+            )
+            return set()
+        except Exception as e:
+            self.stderr.write(f"Error retrieving existing repository IDs: {e}")
+            return set()
+
+    def filter_done_documents(
+        self, dataset: DataSet, metadata_map: dict
+    ) -> dict:
+        """
+        Filter metadata_map to only include documents
+        with DONE status in RAGFlow.
+        """
+        try:
+            documents = dataset.list_documents()
+            done_document_ids = {
+                doc.id
+                for doc in documents
+                if getattr(doc, "run", None) == "DONE"
+            }
+
+            filtered_map = {
+                ragflow_id: metadata
+                for ragflow_id, metadata in metadata_map.items()
+                if ragflow_id in done_document_ids
+            }
+
+            return filtered_map
+        except Exception as e:
+            self.stderr.write(f"Error filtering DONE documents: {e}")
+            return metadata_map
 
     def create_documents(self, metadata_map: dict) -> None:
         """
