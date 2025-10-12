@@ -145,8 +145,8 @@ class Command(BaseCommand):
                 dataset_rf, metadata_map
             )
             self.stdout.write(
-                f"Documents with DONE status: {len(metadata_map_done)} out\
-                 of {len(metadata_map)}"
+                f"Documents with DONE status: {len(metadata_map_done)} out"
+                f" of {len(metadata_map)}"
             )
 
             # populate metadata in Document table
@@ -207,30 +207,50 @@ class Command(BaseCommand):
             return set()
 
     def _filter_done_documents(
-        self, dataset: DataSet, metadata_map: dict
+        self, dataset: DataSet, metadata_map: dict, max_retries: int = 5
     ) -> dict:
         """
         Filter metadata_map to only include documents
         with DONE status in RAGFlow.
         """
-        try:
-            documents = dataset.list_documents()
-            done_document_ids = {
-                doc.id
-                for doc in documents
-                if getattr(doc, "run", None) == "DONE"
-            }
+        import time
 
-            filtered_map = {
-                ragflow_id: metadata
-                for ragflow_id, metadata in metadata_map.items()
-                if ragflow_id in done_document_ids
-            }
+        for attempt in range(max_retries):
+            try:
+                documents = dataset.list_documents()
+                done_document_ids = {
+                    doc.id
+                    for doc in documents
+                    if getattr(doc, "run", None) == "DONE"
+                }
 
-            return filtered_map
-        except Exception as e:
-            self.stderr.write(f"Error filtering DONE documents: {e}")
-            return metadata_map
+                filtered_map = {
+                    ragflow_id: metadata
+                    for ragflow_id, metadata in metadata_map.items()
+                    if ragflow_id in done_document_ids
+                }
+
+                return filtered_map
+
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    wait_time = 2**attempt  # Exponential backoff
+                    self.stdout.write(
+                        "Error filtering DONE documents"
+                        f" (attempt {attempt + 1}/{max_retries}: {e}"
+                    )
+                    self.stdout.write(f"Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    self.stderr.write(
+                        "Error filtering DONE documents after "
+                        f"{max_retries} attempts: {e}"
+                    )
+                    self.stderr.write(
+                        "Returning all documents without filtering"
+                    )
+                    return metadata_map
+        return metadata_map
 
     def _determine_document_status(self, item_metadata: dict) -> str:
         """
@@ -375,20 +395,42 @@ class Command(BaseCommand):
         else:
             raise CommandError(f"folder_path: {folder_path} not found.")
 
-    def _display_final_summary(self, dataset: DataSet) -> None:
+    def _display_final_summary(
+        self, dataset: DataSet, max_retries: int = 5
+    ) -> None:
         """
         Display final summary of processed documents.
         """
-        try:
-            documents = dataset.list_documents()
-            self.stdout.write("\nFinal Summary: ")
-            self.stdout.write("-" * 50)
-            for doc in documents:
-                self.stdout.write(
-                    f"{doc.name} | Status: {doc.run} |\
-                    Fragments: {doc.chunk_count}"
-                )
-            self.stdout.write("-" * 50)
-            self.stdout.write("Process completed successfully")
-        except Exception as e:
-            self.stderr.write(f"Could not retrieve final document status: {e}")
+        import time
+
+        for attempt in range(max_retries):
+            try:
+                documents = dataset.list_documents()
+                self.stdout.write("\nFinal Summary: ")
+                self.stdout.write("-" * 50)
+                for doc in documents:
+                    self.stdout.write(
+                        f"{doc.name[:30]} | Status: {doc.run} |\
+                        Fragments: {doc.chunk_count}"
+                    )
+                self.stdout.write("-" * 50)
+                self.stdout.write("Process completed successfully")
+                return
+
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    wait_time = 2**attempt
+                    self.stderr.write(
+                        "Error retrieving final document status"
+                        f" (attempt {attempt + 1}/{max_retries}): {e}"
+                    )
+                    self.stdout.write(f"Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    self.stderr.write(
+                        "Could not retrieve final document status"
+                        f"after {max_retries} attempts: {e}"
+                    )
+                    self.stderr.write(
+                        "Process completed but could not display final summary"
+                    )
