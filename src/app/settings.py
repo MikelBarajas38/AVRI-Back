@@ -154,3 +154,57 @@ CORS_ALLOWED_ORIGINS = [
 
 STATSD_HOST = 'statsd'
 STATSD_PORT = 8125
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+        'logstash': {
+            'format': '%(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+        'logstash': {
+            'level': 'INFO',
+            'class': 'logstash_async.handler.AsynchronousLogstashHandler',
+            'transport': 'logstash_async.transport.TcpTransport',
+            'host': os.environ.get('LOGSTASH_HOST', 'logstash'),
+            'port': int(os.environ.get('LOGSTASH_PORT', 5000)),
+            'database_path': '/tmp/logstash.db',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'logstash'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console', 'logstash'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console', 'logstash'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        '': {
+            'handlers': ['console', 'logstash'],
+            'level': 'INFO',
+        },
+    },
+}

@@ -23,10 +23,15 @@ services:
       - DB_NAME=devdb
       - DB_USER=devuser
       - DB_PASS=devpass
+      - LOGSTASH_HOST=logstash
+      - LOGSTASH_PORT=5000
     depends_on:
       - db
       - statsd
       - grafana
+      - elasticsearch
+      - logstash
+      - kibana
     networks:
       - default
 
@@ -62,10 +67,50 @@ services:
     networks:
       - default
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - default
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    ports:
+      - "5000:5000"
+      - "9600:9600"
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    environment:
+      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+    depends_on:
+      - elasticsearch
+    networks:
+      - default
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - default
+
 volumes:
   dev-db-data:
   graphite-data:
   grafana-data:
+  elasticsearch-data:
 
 networks:
 
