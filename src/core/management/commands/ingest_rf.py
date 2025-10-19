@@ -6,7 +6,6 @@ import asyncio
 import os
 from typing import Optional
 
-from django import http
 from django.core.management.base import BaseCommand, CommandError
 from ingest_ragflow.rag.parsing import (
     monitor_parsing,
