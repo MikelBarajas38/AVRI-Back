@@ -58,6 +58,17 @@ class Command(BaseCommand):
             API_KEY = os.getenv("RAGFLOW_API_KEY")
             RAGFLOW_BASE_URL = os.getenv("RAGFLOW_BASE_URL")
             DATASET_ID = os.getenv("DATASET_ID")
+
+            # Proxy set up
+            http_proxy = os.getenv("HTTP_PROXY_RI")
+            https_proxy = os.getenv("HTTPS_PROXY_RI")
+            proxies = None
+            if http_proxy or https_proxy:
+                proxies = {"http": http_proxy, "https": https_proxy}
+            self.stdout.write(
+                f"Proxies: {proxies if proxies else 'No proxies configured'}"
+            )
+
             # Set up parameters
             LIMIT_ITEMS = options["li"]
             MAX_CONCURRENT_TASKS = options["max_tasks"]
@@ -119,6 +130,7 @@ class Command(BaseCommand):
                     max_concurrent_tasks=MAX_CONCURRENT_TASKS,
                     limit_items=LIMIT_ITEMS,
                     exclude_uuids=existing_repository_uuids,
+                    proxies=proxies,
                 )
             else:
                 raise CommandError(f"Dataset {DATASET_ID} is NONE")
