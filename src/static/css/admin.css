@@ -7,9 +7,12 @@
 html[data-theme="light"],
 :root {
   --darkened-bg: #e0ecf7;
+  --bg-color: rgba(255, 255, 255, 0.1);
   --avri-color1: #0056a3;
   --avri-color2: #004684;
   --avri-color3: #2a527a;
+  --avri-color-logout1: #dc3545;
+  --avri-color-logout2: #c82333;
   --header-bg: var(--avri-color1);
   --breadcrumbs-bg: var(--avri-color2);
   --header-color: white;
@@ -21,6 +24,7 @@ html[data-theme="light"],
   --button-bg: var(--avri-color1);
   --user-tools-bg: white;
   --user-tools-font: var(--avri-color1);
+  --user-tools-font-logout: var(--avri-color-logout1);
 
   /*font style*/
   --font-family-primary: "Inter", sans-serif;
@@ -117,8 +121,7 @@ html[data-theme="dark"] {
 #user-tools a:link,
 #user-tools a:visited,
 #user-tools a:hover,
-#user-tools a:focus,
-#logout-form button {
+#user-tools a:focus {
   font-size: 1.2rem;
   color: var(--user-tools-font);
   font-weight: bold;
@@ -134,14 +137,10 @@ html[data-theme="dark"] {
   text-transform: none !important;
 }
 
-.custom-user-tools li a:hover,
-.custom-user-tools form:hover {
+.custom-user-tools li a:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
   color: white !important;
   background-color: var(--avri-color1) !important;
-}
-#logout-form button:hover {
-  color: white !important;
 }
 
 #logout-form button,
@@ -299,4 +298,29 @@ body.login .header-img {
 
 #content a[href="/admin/"]:hover {
   background-color: var(--button-hover-bg, #2a527a);
+}
+
+#user-tools #logout-form button {
+  font-size: 1.2rem;
+  color: var(--user-tools-font-logout) !important;
+  font-weight: bold;
+  text-decoration: none;
+  padding: 0 1.5rem;
+  height: 100%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+#user-tools #logout-form button:hover {
+  background-color: var(--avri-color-logout1) !important;
+  color: white !important;
+}
+
+#user-tools #logout-form button:active {
+  background-color: var(--avri-color-logout2) !important;
 }
