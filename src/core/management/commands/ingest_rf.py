@@ -11,7 +11,11 @@ from ingest_ragflow.dspace_api.files import (
     get_item_details,
 )
 from ingest_ragflow.rag.dataset import get_dataset_by_id
-from ingest_ragflow.rag.files import get_orphaned_documents, remove_temp_pdf
+from ingest_ragflow.rag.files import (
+    get_docs_ids,
+    get_orphaned_documents,
+    remove_temp_pdf,
+)
 from ingest_ragflow.rag.parsing import (
     filter_done_documents,
     monitor_parsing,
@@ -127,6 +131,18 @@ class Command(BaseCommand):
             self.stdout.write(f"Limit items: {LIMIT_ITEMS}")
 
             if dataset_rf:
+                # Remove failed/canceled documents
+                failed_documents_ids = get_docs_ids(
+                    dataset=dataset_rf, statuses=["FAIL", "CANCEL"]
+                )
+
+                if len(failed_documents_ids) > 0:
+                    self.stdout.write(
+                        f"Found {len(failed_documents_ids)} "
+                        "documents with FAIL/CANCEL status."
+                    )
+                    dataset_rf.delete_documents(ids=failed_documents_ids)
+
                 # recover orphaned documents mechanism
                 orphaned_documents = get_orphaned_documents(
                     dataset=dataset_rf,
