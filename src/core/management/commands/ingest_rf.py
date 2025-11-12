@@ -4,15 +4,21 @@ Django command to run the ingest pipeline from RI to Rag Flow.
 
 import asyncio
 import os
-from typing import Optional
 
 from django.core.management.base import BaseCommand, CommandError
+from ingest_ragflow.dspace_api.files import (
+    get_files_from_metadata,
+    get_item_details,
+)
+from ingest_ragflow.rag.dataset import get_dataset_by_id
+from ingest_ragflow.rag.files import get_orphaned_documents, remove_temp_pdf
 from ingest_ragflow.rag.parsing import (
+    filter_done_documents,
     monitor_parsing,
     process_items_in_parallel,
 )
+from ingest_ragflow.rag.reporting import display_final_summary
 from ragflow_sdk import RAGFlow
-from ragflow_sdk.modules.dataset import DataSet
 from tqdm import tqdm
 
 
@@ -106,7 +112,7 @@ class Command(BaseCommand):
                 raise CommandError(f"Failed to initialize RAGFlow: {e}")
 
             # Get Dataset
-            dataset_rf = self._get_dataset(rag_object, DATASET_ID)
+            dataset_rf = get_dataset_by_id(rag_object, DATASET_ID)
 
             # Get existing repository UUIDs from database
             existing_repository_uuids = self._get_existing_repository_uuids()
@@ -153,9 +159,7 @@ class Command(BaseCommand):
             )
 
             # Filter metadata_map to only include documents with DONE status
-            metadata_map_done = self._filter_done_documents(
-                dataset_rf, metadata_map
-            )
+            metadata_map_done = filter_done_documents(dataset_rf, metadata_map)
             self.stdout.write(
                 f"Documents with DONE status: {len(metadata_map_done)} out\
                  of {len(metadata_map)}"
@@ -165,40 +169,21 @@ class Command(BaseCommand):
             self._create_documents(metadata_map_done)
 
             # get list of processed files (status DONE)
-            processed_file_names = self._get_files_from_metadata(
-                metadata_map_done
-            )
+            processed_file_names = get_files_from_metadata(metadata_map_done)
 
             # remove files
-            self._remove_temp_pdf(
+            remove_temp_pdf(
                 folder_path=FOLDER_PATH,
                 processed_file_names=processed_file_names,
             )
 
             # Final document status
-            self._display_final_summary(
+            display_final_summary(
                 dataset=dataset_rf, metadata_map=metadata_map
             )
 
         except Exception as e:
             raise CommandError(f"Error during ingest process: {e}")
-
-    def _get_dataset(
-        self, rag_object: RAGFlow, dataset_id: str
-    ) -> Optional[DataSet]:
-        """
-        Get Ragflow dataset by dataset ID.
-        """
-        try:
-            datasets = rag_object.list_datasets(id=dataset_id)
-            if datasets:
-                self.stdout.write(f"Using dataset ID: {dataset_id}")
-                return datasets[0]
-        except Exception as e:
-            self.stderr.write(
-                f"Cloud not use dataset ID: \
-                {dataset_id}: {e}"
-            )
 
     def _get_existing_repository_uuids(self) -> set[str]:
         """
@@ -219,32 +204,6 @@ class Command(BaseCommand):
         except Exception as e:
             self.stderr.write(f"Error retrieving existing repository IDs: {e}")
             return set()
-
-    def _filter_done_documents(
-        self, dataset: DataSet, metadata_map: dict
-    ) -> dict:
-        """
-        Filter metadata_map to only include documents
-        with DONE status in RAGFlow.
-        """
-        try:
-            documents = dataset.list_documents()
-            done_document_ids = {
-                doc.id
-                for doc in documents
-                if getattr(doc, "run", None) == "DONE"
-            }
-
-            filtered_map = {
-                ragflow_id: metadata
-                for ragflow_id, metadata in metadata_map.items()
-                if ragflow_id in done_document_ids
-            }
-
-            return filtered_map
-        except Exception as e:
-            self.stderr.write(f"Error filtering DONE documents: {e}")
-            return metadata_map
 
     def _determine_document_status(self, item_metadata: dict) -> str:
         """
@@ -329,7 +288,7 @@ class Command(BaseCommand):
                 except Exception as e:
                     error_count += 1
                     self.stderr.write(
-                        f"Error processing document {ragflow_id}: {e}"
+                        f"Error processing document rf_id: {ragflow_id}: {e}"
                     )
 
             self.stdout.write(
@@ -344,68 +303,3 @@ class Command(BaseCommand):
         except Exception as e:
             self.stderr.write(f"Error creating Django documents: {e}")
             raise
-
-    def _get_files_from_metadata(self, metadata_map_done: dict) -> list[str]:
-        """
-        Extract file names from the metadata map of documents
-        processed in this execution.
-        """
-        file_names = []
-        for item_metadata in metadata_map_done.values():
-            # Get bitstreams from metadata
-            bitstreams = item_metadata.get("bitstreams", [])
-            if bitstreams:
-                # Get the first bitstream's name (the PDF)
-                file_name = bitstreams[0].get("name")
-                if file_name:
-                    file_names.append(file_name)
-
-        return file_names
-
-    def _remove_temp_pdf(
-        self, folder_path: str, processed_file_names: list[str]
-    ) -> None:
-        """
-        Remove temporal pdf files after the parser has processed it.
-        """
-        if os.path.isdir(folder_path):
-            for file in processed_file_names:
-                file_path_complete = os.path.join(folder_path, file)
-                if os.path.exists(file_path_complete):
-                    try:
-                        os.remove(file_path_complete)
-                        self.stdout.write(
-                            f"File {file_path_complete} has been removed."
-                        )
-                    except Exception as e:
-                        self.stderr.write(
-                            f"Error removing file {file_path_complete}: {e}"
-                        )
-                else:
-                    self.stdout.write(
-                        f"File {file_path_complete} does not exists"
-                        "(likely from previous execution), skipping..."
-                    )
-        else:
-            raise CommandError(f"folder_path: {folder_path} not found.")
-
-    def _display_final_summary(
-        self, dataset: DataSet, metadata_map: dict
-    ) -> None:
-        """
-        Display final summary of processed documents.
-        """
-        try:
-            documents = dataset.list_documents()
-            documents = [doc for doc in documents if doc.id in metadata_map]
-            self.stdout.write("\nFinal Summary: ")
-            self.stdout.write("-" * 50)
-            for doc in documents:
-                self.stdout.write(
-                    f"{doc.name} | Status: {doc.run} |\
-                    Fragments: {doc.chunk_count}"
-                )
-            self.stdout.write("-" * 50)
-            self.stdout.write("Process completed successfully")
-        except Exception as e:
-            self.stderr.write(f"Could not retrieve final document status: {e}")
