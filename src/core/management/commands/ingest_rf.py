@@ -127,6 +127,49 @@ class Command(BaseCommand):
             self.stdout.write(f"Limit items: {LIMIT_ITEMS}")
 
             if dataset_rf:
+                # recover orphaned documents mechanism
+                orphaned_documents = get_orphaned_documents(
+                    dataset=dataset_rf,
+                    existing_uuids=existing_repository_uuids,
+                    status="DONE",
+                )
+
+                self.stdout.write(
+                    f"There are {len(orphaned_documents)} "
+                    "orphaned documents.\n"
+                )
+
+                if orphaned_documents:
+                    self.stdout.write(
+                        "Registering orphaned documents in database..."
+                    )
+                    orphaned_metadata_map = {}
+                    for (
+                        ragflow_id,
+                        uuid,
+                    ) in orphaned_documents.items():
+                        metadata = get_item_details(
+                            base_url_rest=RI_BASE_URL_REST,
+                            item_id=uuid,
+                            proxies=proxies,
+                        )
+                        orphaned_metadata_map[ragflow_id] = metadata
+                    self._create_documents(orphaned_metadata_map)
+                    self.stdout.write(
+                        f"Successfully registered {len(orphaned_documents)} "
+                        "orphaned documents"
+                    )
+                    display_final_summary(
+                        dataset=dataset_rf, metadata_map=orphaned_metadata_map
+                    )
+                    existing_repository_uuids = (
+                        self._get_existing_repository_uuids()
+                    )
+                    self.stdout.write(
+                        f"Found {len(existing_repository_uuids)} "
+                        "existing documents in database"
+                    )
+
                 metadata_map = process_items_in_parallel(
                     base_url=RI_BASE_URL,
                     base_url_rest=RI_BASE_URL_REST,
