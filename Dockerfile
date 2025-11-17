@@ -1,4 +1,4 @@
-FROM python:3.13.2-alpine3.21
+FROM python:3.12-alpine3.21
 LABEL mantainer="https://github.com/MikelBarajas38"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
