@@ -2,6 +2,7 @@
 Test custom Django management commands for ingest_rf.
 """
 
+import asyncio
 import os
 import tempfile
 from functools import wraps
@@ -153,16 +154,20 @@ class IngestRFCommandTests(TestCase):
     @patch.object(IngestCommand, "_get_existing_repository_uuids")
     @patch.object(IngestCommand, "_create_documents")
     @patch("core.management.commands.ingest_rf.remove_temp_pdf")
+    @patch("core.management.commands.ingest_rf.get_files_from_metadata")
     @patch(
         "core.management.commands.ingest_rf.monitor_parsing",
         new_callable=AsyncMock,
     )
+    @patch("core.management.commands.ingest_rf.process_items_in_parallel")
     @patch("core.management.commands.ingest_rf.RAGFlow")
     @silence_ingest_output
     def test_document_processing_flow(
         self,
         mock_ragflow_class,
+        mock_process_items,
         mock_monitor_parsing,
+        mock_get_files,
         mock_remove_pdf,
         mock_create_docs,
         mock_get_uuids,
@@ -205,48 +210,67 @@ class IngestRFCommandTests(TestCase):
             },
         }
 
-        # Mock the parallel processing to return our test data
-        with patch(
-            "core.management.commands.ingest_rf.process_items_in_parallel"
-        ) as mock_process:
-            # Make process_items_in_parallel modify document_ids
-            def side_effect(**kwargs):
-                document_ids_arg = kwargs.get("document_ids", [])
-                if document_ids_arg is not None:
-                    document_ids_arg.extend(test_document_ids)
-                return test_metadata_map
+        # Mock process_items_in_parallel to modify document_ids list
+        def process_items_side_effect(
+            base_url,
+            base_url_rest,
+            folder_path,
+            ragflow_dataset,
+            document_ids,
+            max_concurrent_tasks,
+            limit_items,
+            exclude_uuids,
+            proxies,
+        ):
+            # Add test document IDs to the list
+            # (simulating what the real function does)
+            document_ids.extend(test_document_ids)
+            return test_metadata_map
 
-            mock_process.side_effect = side_effect
+        mock_process_items.side_effect = process_items_side_effect
 
-            # Mock dataset.list_documents to return done status
-            mock_doc1 = Mock()
-            mock_doc1.id = "doc-1"
-            mock_doc1.run = "DONE"
-            mock_doc2 = Mock()
-            mock_doc2.id = "doc-2"
-            mock_doc2.run = "DONE"
-            self.mock_dataset.list_documents.return_value = [
-                mock_doc1,
-                mock_doc2,
-            ]
+        # Mock monitor_parsing to simulate document processing completion
+        async def monitor_parsing_side_effect(
+            dataset, document_ids, poll_interval, on_document_done
+        ):
+            # Simulate document completion by calling the callback
+            for doc_id in document_ids:
+                doc_name = test_metadata_map[doc_id]["name"]
+                await on_document_done(doc_id, doc_name, "DONE")
 
-            # Call command with limit items
-            call_command("ingest_rf", li=2, folder_path=self.test_folder)
+        mock_monitor_parsing.side_effect = monitor_parsing_side_effect
 
-            # Verify document creation was called once
-            # (not twice due to orphaned docs)
-            self.assertTrue(mock_create_docs.called)
+        # Mock file names for removal
+        mock_get_files.return_value = ["doc1.pdf", "doc2.pdf"]
 
-            # Verify monitoring was called (if applicable)
-            if mock_monitor_parsing.called:
-                mock_monitor_parsing.assert_called()
+        # Call command with limit items
+        call_command("ingest_rf", li=2, folder_path=self.test_folder)
 
-            # Verify PDF removal was called with correct file names
-            mock_remove_pdf.assert_called_once()
-            call_args = mock_remove_pdf.call_args[1]
-            self.assertEqual(call_args["folder_path"], self.test_folder)
-            self.assertIn("doc1.pdf", call_args["processed_file_names"])
-            self.assertIn("doc2.pdf", call_args["processed_file_names"])
+        # Verify document creation was called for each document
+        self.assertEqual(
+            mock_create_docs.call_count, 2
+        )  # Once for each document
+
+        # Verify the calls to _create_documents
+        call_args_list = mock_create_docs.call_args_list
+        self.assertEqual(len(call_args_list), 2)
+
+        # Check that each call contains the expected metadata
+        called_metadata = []
+        for call in call_args_list:
+            args, kwargs = call
+            called_metadata.append(
+                args[0] if args else kwargs.get("metadata_map", {})
+            )
+
+        # Verify PDF removal was called with correct file names
+        self.assertEqual(mock_remove_pdf.call_count, 2)
+
+        # Verify monitoring was called
+        mock_monitor_parsing.assert_called_once()
+
+        # Verify final summary was displayed
+        mock_display_summary.assert_called_once()
 
     @patch("core.management.commands.ingest_rf.get_orphaned_documents")
     @patch("core.management.commands.ingest_rf.get_dataset_by_id")
@@ -489,9 +513,7 @@ class IngestRFCommandTests(TestCase):
         self.assertEqual(mock_update_or_create.call_count, 2)
 
         # Verify stdout writes
-        self.assertEqual(
-            command.stdout.write.call_count, 3
-        )  # 2 documents + summary
+        self.assertEqual(command.stdout.write.call_count, 1)  # summary
 
     @patch("core.models.Document.objects.update_or_create")
     @silence_ingest_output
@@ -520,3 +542,158 @@ class IngestRFCommandTests(TestCase):
         command._create_documents(metadata_map)
 
         command.stderr.write.assert_called_once()
+
+    @patch("core.management.commands.ingest_rf.remove_temp_pdf")
+    @patch("core.management.commands.ingest_rf.get_files_from_metadata")
+    @patch("asgiref.sync.sync_to_async")
+    @silence_ingest_output
+    def test_on_document_done_callback_success(
+        self, mock_sync_to_async, mock_get_files, mock_remove_pdf
+    ):
+        """
+        Test successful execution of _on_document_done_callback.
+        """
+        command = IngestCommand()
+        command.metadata_map = {
+            "doc-1": {
+                "name": "Test Document",
+                "uuid": "uuid-1",
+                "handle": "12345",
+                "bitstreams": [{"name": "test.pdf"}],
+            }
+        }
+        command.folder_path = self.test_folder
+        command.registered_docs_count = 0
+
+        # Mock the async wrapper for Django ORM
+        mock_sync_to_async.return_value = AsyncMock()
+        mock_get_files.return_value = ["test.pdf"]
+
+        # Execute the callback
+        asyncio.run(
+            command._on_document_done_callback(
+                "doc-1", "Test Document", "DONE"
+            )
+        )
+
+        # Verify document was registered and temp file removed
+        self.assertEqual(command.registered_docs_count, 1)
+        mock_get_files.assert_called_once()
+        mock_remove_pdf.assert_called_once_with(
+            folder_path=self.test_folder, processed_file_names=["test.pdf"]
+        )
+
+    @patch("core.management.commands.ingest_rf.remove_temp_pdf")
+    @patch("core.management.commands.ingest_rf.get_files_from_metadata")
+    @patch("asgiref.sync.sync_to_async")
+    @silence_ingest_output
+    def test_on_document_done_callback_no_metadata(
+        self, mock_sync_to_async, mock_get_files, mock_remove_pdf
+    ):
+        """
+        Test _on_document_done_callback when no metadata is found for document.
+        """
+        command = IngestCommand()
+        command.metadata_map = {}  # No metadata for this document
+        command.folder_path = self.test_folder
+        command.registered_docs_count = 0
+
+        # Execute the callback for non-existent document
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            asyncio.run(
+                command._on_document_done_callback(
+                    "doc-unknown", "Unknown Document", "DONE"
+                )
+            )
+
+            output = mock_stdout.getvalue()
+            self.assertIn("No metadata found for document", output)
+
+        # Verify no operations were performed
+        self.assertEqual(command.registered_docs_count, 0)
+        mock_get_files.assert_not_called()
+        mock_remove_pdf.assert_not_called()
+
+    @patch("core.management.commands.ingest_rf.remove_temp_pdf")
+    @patch("core.management.commands.ingest_rf.get_files_from_metadata")
+    @patch("asgiref.sync.sync_to_async")
+    @silence_ingest_output
+    def test_on_document_done_callback_no_temp_file(
+        self, mock_sync_to_async, mock_get_files, mock_remove_pdf
+    ):
+        """
+        Test _on_document_done_callback when no temp file needs to be removed.
+        """
+        command = IngestCommand()
+        command.metadata_map = {
+            "doc-1": {
+                "name": "Test Document",
+                "uuid": "uuid-1",
+                "handle": "12345",
+                "bitstreams": [],
+            }
+        }
+        command.folder_path = self.test_folder
+        command.registered_docs_count = 0
+
+        # Mock the async wrapper for Django ORM
+        mock_sync_to_async.return_value = AsyncMock()
+        mock_get_files.return_value = []  # No files to remove
+
+        # Execute the callback
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            asyncio.run(
+                command._on_document_done_callback(
+                    "doc-1", "Test Document", "DONE"
+                )
+            )
+
+            output = mock_stdout.getvalue()
+            self.assertIn("no temp file to remove", output)
+
+        # Verify document was registered but no file removal
+        self.assertEqual(command.registered_docs_count, 1)
+        mock_get_files.assert_called_once()
+        mock_remove_pdf.assert_not_called()
+
+    @patch("core.management.commands.ingest_rf.remove_temp_pdf")
+    @patch("core.management.commands.ingest_rf.get_files_from_metadata")
+    @patch("asgiref.sync.sync_to_async")
+    @silence_ingest_output
+    def test_on_document_done_callback_exception(
+        self, mock_sync_to_async, mock_get_files, mock_remove_pdf
+    ):
+        """
+        Test _on_document_done_callback when an exception occurs.
+        """
+        command = IngestCommand()
+        command.metadata_map = {
+            "doc-1": {
+                "name": "Test Document",
+                "uuid": "uuid-1",
+                "handle": "12345",
+                "bitstreams": [{"name": "test.pdf"}],
+            }
+        }
+        command.folder_path = self.test_folder
+        command.registered_docs_count = 0
+
+        # Mock an exception during document registration
+        mock_sync_to_async.side_effect = Exception("Registration failed")
+
+        # Execute the callback
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            asyncio.run(
+                command._on_document_done_callback(
+                    "doc-1", "Test Document", "DONE"
+                )
+            )
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Failed to process document", output)
+            self.assertIn("Registration failed", output)
+
+        # Verify no operations were completed
+        self.assertEqual(command.registered_docs_count, 0)
+        mock_get_files.assert_not_called()
+        mock_remove_pdf.assert_not_called()

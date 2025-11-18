@@ -4,6 +4,7 @@ Django command to run the ingest pipeline from RI to Rag Flow.
 
 import asyncio
 import os
+from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError
 from ingest_ragflow.dspace_api.files import (
@@ -17,7 +18,6 @@ from ingest_ragflow.rag.files import (
     remove_temp_pdf,
 )
 from ingest_ragflow.rag.parsing import (
-    filter_done_documents,
     monitor_parsing,
     process_items_in_parallel,
 )
@@ -28,6 +28,12 @@ from tqdm import tqdm
 
 class Command(BaseCommand):
     help = "Run the ingest pipeline from RI to RAG Flow"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.metadata_map: dict[str, Any] = {}
+        self.folder_path = ""
+        self.registered_docs_count = 0
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -56,8 +62,7 @@ class Command(BaseCommand):
             required=False,
             default=2.5,
             type=float,
-            help="Interval (in seconds) between \
-            status checks",
+            help="Interval (in seconds) between status checks",
         )
 
     def handle(self, *args, **options):
@@ -207,33 +212,21 @@ class Command(BaseCommand):
                 )
                 return
 
-            # Monitoring after dowloading
+            # Store metadata_map and folder_path as
+            # instance variables for callback
+            self.metadata_map = metadata_map
+            self.folder_path = FOLDER_PATH
+            self.registered_docs_count = 0
+
+            # Monitoring with callback for immediate registration
             tqdm.write("Starting document parsing monitoring...")
             asyncio.run(
                 monitor_parsing(
                     dataset=dataset_rf,
                     document_ids=document_ids,
                     poll_interval=POLL_INTERVAL,
+                    on_document_done=self._on_document_done_callback,
                 )
-            )
-
-            # Filter metadata_map to only include documents with DONE status
-            metadata_map_done = filter_done_documents(dataset_rf, metadata_map)
-            self.stdout.write(
-                f"Documents with DONE status: {len(metadata_map_done)} out\
-                 of {len(metadata_map)}"
-            )
-
-            # populate metadata in Document table
-            self._create_documents(metadata_map_done)
-
-            # get list of processed files (status DONE)
-            processed_file_names = get_files_from_metadata(metadata_map_done)
-
-            # remove files
-            remove_temp_pdf(
-                folder_path=FOLDER_PATH,
-                processed_file_names=processed_file_names,
             )
 
             # Final document status
@@ -241,8 +234,68 @@ class Command(BaseCommand):
                 dataset=dataset_rf, metadata_map=metadata_map
             )
 
+            tqdm.write(
+                "\n[INFO] Total documents registered:"
+                f" {self.registered_docs_count}"
+            )
+
         except Exception as e:
             raise CommandError(f"Error during ingest process: {e}")
+
+    async def _on_document_done_callback(
+        self, doc_id: str, doc_name: str, status: str
+    ) -> None:
+        """
+        Callback executed when a document finishes parsing.
+        Registers the document immediately in the database
+        and removes temp file.
+
+        Args:
+            doc_id: RagFlow document ID
+            doc_name: Document name
+            status: Document status (should be "DONE")
+        """
+        try:
+            # Check if metadata exists for this document
+            if doc_id not in self.metadata_map:
+                tqdm.write(
+                    f"\n[WARNING] No metadata found for document {doc_name} "
+                    f"(ID: {doc_id})"
+                )
+                return
+
+            # Get metadata for this specific document
+            doc_metadata = {doc_id: self.metadata_map[doc_id]}
+
+            # Register document in database
+            # (using sync_to_async for Django ORM)
+            from asgiref.sync import sync_to_async
+
+            await sync_to_async(self._create_documents)(doc_metadata)
+            self.registered_docs_count += 1
+
+            # Get file name from metadata and remove temp file
+            processed_file_names = get_files_from_metadata(doc_metadata)
+            if processed_file_names:
+                remove_temp_pdf(
+                    folder_path=self.folder_path,
+                    processed_file_names=processed_file_names,
+                )
+                tqdm.write(
+                    f"[INFO] Document {doc_name}"
+                    "registered and temp file removed"
+                )
+            else:
+                tqdm.write(
+                    f"\n[INFO] Document {doc_name} registered "
+                    "(no temp file to remove)"
+                )
+
+        except Exception as e:
+            tqdm.write(
+                f"\n[ERROR] Failed to process document {doc_name} "
+                f"(ID: {doc_id}): {e}"
+            )
 
     def _get_existing_repository_uuids(self) -> set[str]:
         """
@@ -340,21 +393,21 @@ class Command(BaseCommand):
 
                     if created:
                         created_count += 1
-                        self.stdout.write(f"Created document: {title}")
                     else:
                         update_count += 1
-                        self.stdout.write(f"Updated document: {title}")
                 except Exception as e:
                     error_count += 1
                     self.stderr.write(
                         f"Error processing document rf_id: {ragflow_id}: {e}"
                     )
 
-            self.stdout.write(
-                f"Successfully processed {len(metadata_map)} documents: "
-                f"{created_count} created, {update_count} updated,"
-                f"{error_count} errors"
-            )
+            if len(metadata_map) > 1:
+                # Only show summary for batch operations
+                self.stdout.write(
+                    f"Processed {len(metadata_map)} documents: "
+                    f"{created_count} created, {update_count} updated, "
+                    f"{error_count} errors"
+                )
         except ImportError:
             self.stderr.write(
                 "Error: Could not import Document model from core.models"
