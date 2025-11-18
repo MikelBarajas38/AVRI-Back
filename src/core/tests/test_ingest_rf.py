@@ -5,7 +5,6 @@ Test custom Django management commands for ingest_rf.
 import asyncio
 import os
 import tempfile
-from functools import wraps
 from io import StringIO
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -13,19 +12,7 @@ from django.core.management import CommandError, call_command
 from django.test import TestCase
 
 from core.management.commands.ingest_rf import Command as IngestCommand
-
-
-def silence_ingest_output(test_method):
-    """
-    Decorator to silence ingest_rf command output in tests.
-    """
-
-    @wraps(test_method)
-    def wrapper(*args, **kwargs):
-        with patch("sys.stdout", new_callable=StringIO):
-            return test_method(*args, **kwargs)
-
-    return wrapper
+from core.tests.decorators import silence_ingest_output
 
 
 class IngestRFCommandTests(TestCase):
