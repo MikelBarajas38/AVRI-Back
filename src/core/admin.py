@@ -120,7 +120,8 @@ class DocumentAdmin(admin.ModelAdmin):
     Define the admin pages for documents.
     """
     ordering = ['created_at']
-    list_display = ['title', 'id', 'repository_id', 'created_at', 'updated_at', 'status']
+    list_display = ['title', 'id', 'repository_id',
+                    'created_at', 'updated_at', 'status']
     list_filter = ['status']
     fieldsets = (
         (None, {'fields': ('id', 'title',)}),
