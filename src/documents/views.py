@@ -2,23 +2,16 @@
 Views for the documents API
 """
 
+import os
+
 import requests
-
-from rest_framework import viewsets
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.filters import OrderingFilter
+from rest_framework import authentication, permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework import authentication, permissions
+from rest_framework.filters import OrderingFilter
+from rest_framework.response import Response
 
-from core.models import (
-    Document,
-    AuthoredDocument,
-    SavedDocument
-)
-
+from core.models import AuthoredDocument, Document, SavedDocument
 from core.permissions import IsAuthor
-
 from documents import serializers
 
 
@@ -26,11 +19,12 @@ class DocumentViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Manage documents in the database
     """
+
     serializer_class = serializers.DocumentSerializer
     queryset = Document.objects.all()
     filter_backends = [OrderingFilter]
-    ordering_fields = ['created_at', 'updated_at']
-    ordering = ['-created_at']
+    ordering_fields = ["created_at", "updated_at"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         """
@@ -38,14 +32,17 @@ class DocumentViewSet(viewsets.ReadOnlyModelViewSet):
         Allows ordering by updated_at if specified.
         """
 
-        order_by = self.request.query_params.get('ordering', '-created_at')
+        order_by = self.request.query_params.get("ordering", "-created_at")
         valid_orders = [
-            'created_at', '-created_at', 'updated_at', '-updated_at'
+            "created_at",
+            "-created_at",
+            "updated_at",
+            "-updated_at",
         ]
         if order_by in valid_orders:
             queryset = self.queryset.order_by(order_by)
         else:
-            queryset = self.queryset.order_by('-created_at')
+            queryset = self.queryset.order_by("-created_at")
 
         return queryset
 
@@ -53,7 +50,7 @@ class DocumentViewSet(viewsets.ReadOnlyModelViewSet):
         """
         Return appropriate serializer class.
         """
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             return serializers.DocumentDetailSerializer
 
         return self.serializer_class
@@ -63,6 +60,7 @@ class SavedDocumentViewSet(viewsets.GenericViewSet):
     """
     Manage the current user's saved documents in the database
     """
+
     serializer_class = serializers.SavedDocumentSerializer
     queryset = SavedDocument.objects.all()
     authentication_classes = [authentication.TokenAuthentication]
@@ -73,12 +71,12 @@ class SavedDocumentViewSet(viewsets.GenericViewSet):
         Return saved documents for the authenticated user.
         """
         user_queryset = self.queryset.filter(user=self.request.user)
-        return user_queryset.order_by('-created_at')
+        return user_queryset.order_by("-created_at")
 
     def get_serializer_class(self):
         return self.serializer_class
 
-    @action(detail=False, methods=['get'], url_path='list')
+    @action(detail=False, methods=["get"], url_path="list")
     def list_documents(self, request):
         """
         List all saved documents for the authenticated user.
@@ -88,10 +86,10 @@ class SavedDocumentViewSet(viewsets.GenericViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
-            detail=False,
-            methods=['post'],
-            url_path='add/(?P<document_id>[^/.]+)',
-        )
+        detail=False,
+        methods=["post"],
+        url_path="add/(?P<document_id>[^/.]+)",
+    )
     def add_document(self, request, document_id=None):
         """
         Save a document for the authenticated user.
@@ -100,13 +98,12 @@ class SavedDocumentViewSet(viewsets.GenericViewSet):
             document = Document.objects.get(id=document_id)
         except Document.DoesNotExist:
             return Response(
-                {'detail': 'Document not found'},
-                status=status.HTTP_404_NOT_FOUND
+                {"detail": "Document not found"},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         saved_document, created = SavedDocument.objects.get_or_create(
-            user=self.request.user,
-            document=document
+            user=self.request.user, document=document
         )
 
         serializer = self.get_serializer(saved_document)
@@ -114,22 +111,18 @@ class SavedDocumentViewSet(viewsets.GenericViewSet):
 
         if created:
             return Response(
-                {
-                    'message': 'Document added successfully',
-                    'data': data
-                },
-                status=status.HTTP_201_CREATED
+                {"message": "Document added successfully", "data": data},
+                status=status.HTTP_201_CREATED,
             )
         else:
             return Response(
-                {'detail': 'Document already added'},
-                status=status.HTTP_200_OK
+                {"detail": "Document already added"}, status=status.HTTP_200_OK
             )
 
     @action(
-            detail=False,
-            methods=['delete'],
-            url_path='delete/(?P<document_id>[^/.]+)'
+        detail=False,
+        methods=["delete"],
+        url_path="delete/(?P<document_id>[^/.]+)",
     )
     def delete_document(self, request, document_id=None):
         """
@@ -137,18 +130,17 @@ class SavedDocumentViewSet(viewsets.GenericViewSet):
         """
         try:
             saved_document = SavedDocument.objects.get(
-                user=self.request.user,
-                document__id=document_id
+                user=self.request.user, document__id=document_id
             )
             saved_document.delete()
             return Response(
-                {'message': 'Document removed successfully'},
-                status=status.HTTP_204_NO_CONTENT
+                {"message": "Document removed successfully"},
+                status=status.HTTP_204_NO_CONTENT,
             )
         except SavedDocument.DoesNotExist:
             return Response(
-                {'detail': 'Saved document not found'},
-                status=status.HTTP_404_NOT_FOUND
+                {"detail": "Saved document not found"},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
 
@@ -156,6 +148,7 @@ class AuthoredDocumentViewSet(viewsets.GenericViewSet):
     """
     Manage the current user's authored documents in the database
     """
+
     serializer_class = serializers.AuthoredDocumentSerializer
     queryset = AuthoredDocument.objects.all()
     authentication_classes = [authentication.TokenAuthentication]
@@ -166,12 +159,12 @@ class AuthoredDocumentViewSet(viewsets.GenericViewSet):
         Return authored documents for the authenticated user.
         """
         user_queryset = self.queryset.filter(author=self.request.user)
-        return user_queryset.order_by('-created_at')
+        return user_queryset.order_by("-created_at")
 
     def get_serializer_class(self):
         return self.serializer_class
 
-    @action(detail=False, methods=['get'], url_path='list')
+    @action(detail=False, methods=["get"], url_path="list")
     def list_documents(self, request):
         """
         List all of the user's authored documents.
@@ -181,10 +174,10 @@ class AuthoredDocumentViewSet(viewsets.GenericViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
-            detail=False,
-            methods=['post'],
-            url_path='add/(?P<document_id>[^/.]+)',
-        )
+        detail=False,
+        methods=["post"],
+        url_path="add/(?P<document_id>[^/.]+)",
+    )
     def add_document(self, request, document_id=None):
         """
         Add a document as authored by the authenticated user.
@@ -193,13 +186,12 @@ class AuthoredDocumentViewSet(viewsets.GenericViewSet):
             document = Document.objects.get(id=document_id)
         except Document.DoesNotExist:
             return Response(
-                {'detail': 'Document not found'},
-                status=status.HTTP_404_NOT_FOUND
+                {"detail": "Document not found"},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         authored_document, created = AuthoredDocument.objects.get_or_create(
-            author=self.request.user,
-            document=document
+            author=self.request.user, document=document
         )
 
         serializers = self.get_serializer(authored_document)
@@ -207,41 +199,36 @@ class AuthoredDocumentViewSet(viewsets.GenericViewSet):
 
         if created:
             return Response(
-                {
-                    'message': 'Document added successfully',
-                    'data': data
-                },
-                status=status.HTTP_201_CREATED
+                {"message": "Document added successfully", "data": data},
+                status=status.HTTP_201_CREATED,
             )
         else:
             return Response(
-                {'detail': 'Document already added'},
-                status=status.HTTP_200_OK
+                {"detail": "Document already added"}, status=status.HTTP_200_OK
             )
 
     @action(
-            detail=False,
-            methods=['delete'],
-            url_path='delete/(?P<document_id>[^/.]+)'
-        )
+        detail=False,
+        methods=["delete"],
+        url_path="delete/(?P<document_id>[^/.]+)",
+    )
     def delete_document(self, request, document_id=None):
         """
         Remove a document from the user's authored documents.
         """
         try:
             authored_document = AuthoredDocument.objects.get(
-                author=self.request.user,
-                document__id=document_id
+                author=self.request.user, document__id=document_id
             )
             authored_document.delete()
             return Response(
-                {'message': 'Document removed successfully'},
-                status=status.HTTP_204_NO_CONTENT
+                {"message": "Document removed successfully"},
+                status=status.HTTP_204_NO_CONTENT,
             )
         except AuthoredDocument.DoesNotExist:
             return Response(
-                {'detail': 'Authored document not found'},
-                status=status.HTTP_404_NOT_FOUND
+                {"detail": "Authored document not found"},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
 
@@ -249,21 +236,34 @@ class RepositoryDocumentViewSet(viewsets.GenericViewSet):
     """
     Fetch document metadata from external repository
     """
+
     serializer_class = serializers.RepositoryDocumentSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
-    REPO_BASE = 'https://repositorioinstitucional.uaslp.mx/rest/items'
+    REPO_BASE = "https://repositorioinstitucional.uaslp.mx/rest/items"
 
     def get_serializer_class(self):
         """Return appropriate serializer class."""
         return self.serializer_class
 
+    def _get_proxies(self):
+        """
+        Get proxy configuration from environment variables if available.
+        Returns a dict with proxy settings or None if not configured.
+        """
+        http_proxy = os.environ.get("HTTP_PROXY_RI")
+        https_proxy = os.environ.get("HTTPS_PROXY_RI")
+
+        if http_proxy and https_proxy:
+            return {"http": http_proxy, "https": https_proxy}
+        return None
+
     @action(
         detail=True,
-        methods=['get'],
-        url_path='repository',
-        url_name='repository'
+        methods=["get"],
+        url_path="repository",
+        url_name="repository",
     )
     def get_repo_doc(self, request, pk=None):
         """
@@ -274,68 +274,61 @@ class RepositoryDocumentViewSet(viewsets.GenericViewSet):
                 document = Document.objects.get(id=pk)
             except Document.DoesNotExist:
                 return Response(
-                    {'detail': 'Document not found'},
-                    status=status.HTTP_404_NOT_FOUND
+                    {"detail": "Document not found"},
+                    status=status.HTTP_404_NOT_FOUND,
                 )
 
             repo_id = document.repository_id
+
+            # Get proxy configuration
+            proxies = self._get_proxies()
+
+            # Make request with or without proxy
             response = requests.get(
                 f"{self.REPO_BASE}/{repo_id}/metadata",
-                headers={
-                    'Accept': 'application/json'
-                }
+                headers={"Accept": "application/json"},
+                proxies=proxies,
             )
 
             if response.status_code != 200:
                 return Response(
-                    {
-                        'detail': 'Error fetching document'
-                    },
-                    status=status.HTTP_404_NOT_FOUND
+                    {"detail": "Error fetching document"},
+                    status=status.HTTP_404_NOT_FOUND,
                 )
 
             raw_metadata = response.json()
             metadata = {}
 
             for entry in raw_metadata:
-                key = entry['key']
-                value = entry['value']
+                key = entry["key"]
+                value = entry["value"]
                 if isinstance(value, list):
                     metadata[key] = [v for v in value]
                 else:
                     metadata[key] = value
 
-            print(metadata['dc.contributor.author'])
+            print(metadata["dc.contributor.author"])
 
             repo_doc = {
-                'id': pk,
-                'title': metadata.get(
-                    'dc.title',
-                    'Unknown Title'
+                "id": pk,
+                "title": metadata.get("dc.title", "Unknown Title"),
+                "repository_uri": document.repository_uri,
+                "repository_id": repo_id,
+                "status": document.status,
+                "author": metadata.get(
+                    "dc.contributor.author", "Unknown Author"
                 ),
-                'repository_uri': document.repository_uri,
-                'repository_id': repo_id,
-                'status': document.status,
-                'author': metadata.get(
-                    'dc.contributor.author',
-                    'Unknown Author'
+                "type": metadata.get("dc.type", "Unknown Type"),
+                "publication_date": metadata.get(
+                    "dc.date.issued", "Unknown Date"
                 ),
-                'type': metadata.get(
-                    'dc.type',
-                    'Unknown Type'
+                "knowledge_area": metadata.get(
+                    "dc.subject.other", "Unknown Area"
                 ),
-                'publication_date': metadata.get(
-                    'dc.date.issued',
-                    'Unknown Date'
+                "license": metadata.get(
+                    "dc.rights.rights",
+                    metadata.get("dc.rights", "Unknown License"),
                 ),
-                'knowledge_area': metadata.get(
-                    'dc.subject.other',
-                    'Unknown Area'
-                ),
-                'license': metadata.get(
-                    'dc.rights.rights',
-                    metadata.get('dc.rights', 'Unknown License')
-                )
             }
 
             serializer = self.get_serializer(data=repo_doc)
@@ -344,9 +337,6 @@ class RepositoryDocumentViewSet(viewsets.GenericViewSet):
 
         except requests.RequestException as e:
             return Response(
-                {
-                    'detail':
-                    f'Error fetching document {str(e)}'
-                },
-                status=status.HTTP_502_BAD_GATEWAY
+                {"detail": f"Error fetching document {str(e)}"},
+                status=status.HTTP_502_BAD_GATEWAY,
             )
